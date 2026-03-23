@@ -1,31 +1,27 @@
-import axios from 'axios'
+const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
 
-const http = axios.create({
-    baseURL: '/api',
-    headers: {
-        Accept: 'application/json',
-    },
-})
+function getToken() {
+    return localStorage.getItem("token");
+}
 
-http.interceptors.request.use(config => {
-    const token = localStorage.getItem('token')
+async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
+    const res = await fetch(`${API_URL}${path}`, {
+        ...options,
+        headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken()}`,
+            ...options.headers,
+        },
+    });
 
-    if (token) {
-        config.headers.Authorization = `Bearer ${token}`
-    }
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message ?? "Erro na requisição");
+    return data;
+}
 
-    return config
-})
-
-http.interceptors.response.use(
-    response => response,
-    error => {
-        if (error.response?.status === 401) {
-            console.warn('Não autorizado')
-        }
-
-        return Promise.reject(error)
-    }
-)
-
-export default http
+export const api = {
+    get: <T>(path: string) => request<T>(path),
+    post: <T>(path: string, body: unknown) => request<T>(path, {method: "POST", body: JSON.stringify(body)}),
+    put: <T>(path: string, body: unknown) => request<T>(path, {method: "PUT", body: JSON.stringify(body)}),
+    delete: <T>(path: string) => request<T>(path, {method: "DELETE"}),
+};
