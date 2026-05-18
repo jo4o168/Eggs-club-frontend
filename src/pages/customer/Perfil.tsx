@@ -1,27 +1,72 @@
-import {useState} from "react";
+import {ChangeEvent, useEffect, useRef, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Camera, MapPin, Phone, Mail} from "lucide-react";
-import {toast} from "@/hooks/use-toast";
+import {useProfile, useUpdateProfile, useUpdateProfileAvatar} from "@/hooks/useProfiles";
+import {maskCep, maskCpf, maskPhone, onlyDigits} from "@/utils/inputMasks";
+import {normalizeUfToSigla} from "@/utils/brazilStates";
+import BrazilLocationFields from "@/components/BrazilLocationFields";
 
 const ClientePerfil = () => {
+    const {data: remoteProfile, isLoading} = useProfile();
+    const updateProfile = useUpdateProfile();
+    const updateProfileAvatar = useUpdateProfileAvatar();
+    const avatarInputRef = useRef<HTMLInputElement>(null);
     const [profile, setProfile] = useState({
-        name: "João Silva",
-        email: "joao.silva@email.com",
-        phone: "(11) 99999-9999",
-        cpf: "123.456.789-00",
-        address: "Rua das Flores, 123",
-        city: "São Paulo",
-        state: "SP",
-        zipCode: "01234-567",
-        complement: "Apto 42",
+        name: "",
+        email: "",
+        phone: "",
+        cpf: "",
+        address: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        complement: "",
     });
 
-    const handleSave = () => {
-        toast({title: "Perfil atualizado com sucesso!"});
+    useEffect(() => {
+        if (!remoteProfile) return;
+        setProfile((prev) => ({
+            ...prev,
+            name: remoteProfile.name ?? "",
+            email: remoteProfile.email ?? "",
+            phone: maskPhone(remoteProfile.phone ?? ""),
+            cpf: maskCpf(remoteProfile.cpf ?? ""),
+            address: remoteProfile.address ?? "",
+            city: remoteProfile.city ?? "",
+            state: normalizeUfToSigla(remoteProfile.state ?? ""),
+            zipCode: maskCep(remoteProfile.zip_code ?? ""),
+            complement: remoteProfile.complement ?? "",
+        }));
+    }, [remoteProfile]);
+
+    const handleSave = async () => {
+        await updateProfile.mutateAsync({
+            name: profile.name,
+            email: profile.email,
+            phone: onlyDigits(profile.phone) || null,
+            cpf: onlyDigits(profile.cpf) || null,
+            address: profile.address || null,
+            city: profile.city || null,
+            state: profile.state ? profile.state.toUpperCase() : null,
+            zip_code: onlyDigits(profile.zipCode) || null,
+            complement: profile.complement || null,
+        });
+    };
+
+    const handleAvatarClick = () => {
+        avatarInputRef.current?.click();
+    };
+
+    const handleAvatarChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        await updateProfileAvatar.mutateAsync(file);
+        event.target.value = "";
     };
 
     return (
@@ -44,8 +89,20 @@ const ClientePerfil = () => {
                         <div className="flex items-center gap-6">
                             <div
                                 className="w-24 h-24 bg-secondary rounded-full flex items-center justify-center relative overflow-hidden">
-                                <span className="text-3xl font-semibold text-primary">JS</span>
+                                {remoteProfile?.avatar_url ? (
+                                    <img
+                                        src={remoteProfile.avatar_url}
+                                        alt="Foto de perfil"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <span className="text-3xl font-semibold text-primary">
+                                        {(profile.name || "US").slice(0, 2).toUpperCase()}
+                                    </span>
+                                )}
                                 <button
+                                    type="button"
+                                    onClick={handleAvatarClick}
                                     className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                                     <Camera className="w-6 h-6 text-white"/>
                                 </button>
@@ -54,9 +111,16 @@ const ClientePerfil = () => {
                                 <p className="text-sm text-muted-foreground mb-2">
                                     Clique para alterar sua foto
                                 </p>
-                                <Button variant="outline" size="sm">
+                                <Button variant="outline" size="sm" type="button" onClick={handleAvatarClick} disabled={updateProfileAvatar.isPending}>
                                     Alterar foto
                                 </Button>
+                                <input
+                                    ref={avatarInputRef}
+                                    type="file"
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleAvatarChange}
+                                />
                             </div>
                         </div>
                     </CardContent>
@@ -85,7 +149,7 @@ const ClientePerfil = () => {
                                     id="cpf"
                                     value={profile.cpf}
                                     onChange={(e) =>
-                                        setProfile({...profile, cpf: e.target.value})
+                                        setProfile({...profile, cpf: maskCpf(e.target.value)})
                                     }
                                 />
                             </div>
@@ -115,7 +179,7 @@ const ClientePerfil = () => {
                                     id="phone"
                                     value={profile.phone}
                                     onChange={(e) =>
-                                        setProfile({...profile, phone: e.target.value})
+                                        setProfile({...profile, phone: maskPhone(e.target.value)})
                                     }
                                 />
                             </div>
@@ -131,62 +195,19 @@ const ClientePerfil = () => {
                             Endereço de Entrega
                         </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid md:grid-cols-3 gap-4">
-                            <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="address">Endereço</Label>
-                                <Input
-                                    id="address"
-                                    value={profile.address}
-                                    onChange={(e) =>
-                                        setProfile({...profile, address: e.target.value})
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="zipCode">CEP</Label>
-                                <Input
-                                    id="zipCode"
-                                    value={profile.zipCode}
-                                    onChange={(e) =>
-                                        setProfile({...profile, zipCode: e.target.value})
-                                    }
-                                />
-                            </div>
-                        </div>
-
-                        <div className="grid md:grid-cols-3 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="complement">Complemento</Label>
-                                <Input
-                                    id="complement"
-                                    value={profile.complement}
-                                    onChange={(e) =>
-                                        setProfile({...profile, complement: e.target.value})
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="city">Cidade</Label>
-                                <Input
-                                    id="city"
-                                    value={profile.city}
-                                    onChange={(e) =>
-                                        setProfile({...profile, city: e.target.value})
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="state">Estado</Label>
-                                <Input
-                                    id="state"
-                                    value={profile.state}
-                                    onChange={(e) =>
-                                        setProfile({...profile, state: e.target.value})
-                                    }
-                                />
-                            </div>
-                        </div>
+                    <CardContent>
+                        <BrazilLocationFields
+                            zipCode={profile.zipCode}
+                            onZipCodeChange={(masked) => setProfile((p) => ({...p, zipCode: masked}))}
+                            address={profile.address}
+                            onAddressChange={(value) => setProfile((p) => ({...p, address: value}))}
+                            complement={profile.complement}
+                            onComplementChange={(value) => setProfile((p) => ({...p, complement: value}))}
+                            stateUf={profile.state}
+                            onStateUfChange={(uf) => setProfile((p) => ({...p, state: uf}))}
+                            city={profile.city}
+                            onCityChange={(value) => setProfile((p) => ({...p, city: value}))}
+                        />
                     </CardContent>
                 </Card>
 
@@ -216,7 +237,7 @@ const ClientePerfil = () => {
 
                 {/* Save Button */}
                 <div className="flex justify-end">
-                    <Button variant="hero" onClick={handleSave}>
+                    <Button variant="hero" onClick={handleSave} disabled={updateProfile.isPending || isLoading}>
                         Salvar Alterações
                     </Button>
                 </div>

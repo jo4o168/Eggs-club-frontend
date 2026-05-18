@@ -1,13 +1,19 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from "@/components/ui/card";
 import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Switch} from "@/components/ui/switch";
+import {Textarea} from "@/components/ui/textarea";
 import {toast} from "@/hooks/use-toast";
+import {useProducerSetting, useUpsertProducerSetting} from "@/hooks/useProducerSettings";
+import {api} from "@/api/http";
+import {Loader2} from "lucide-react";
 
 const ProdutorConfiguracoes = () => {
+    const {data: producerSetting, isLoading} = useProducerSetting();
+    const upsertProducerSetting = useUpsertProducerSetting();
     const [settings, setSettings] = useState({
         emailNotifications: true,
         smsNotifications: false,
@@ -16,23 +22,194 @@ const ProdutorConfiguracoes = () => {
         showOnSearch: true,
         acceptNewSubscribers: true,
     });
+    const [farm, setFarm] = useState({
+        farm_name: "",
+        description: "",
+        certifications: "",
+        address: "",
+        city: "",
+        state: "",
+        website: "",
+        delivery_info: "",
+    });
+    const [currentPassword, setCurrentPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+    const [isChangingPassword, setIsChangingPassword] = useState(false);
 
-    const handleSave = () => {
-        toast({title: "Configurações salvas com sucesso!"});
+    useEffect(() => {
+        if (!producerSetting) return;
+
+        setSettings({
+            emailNotifications: producerSetting.email_notifications ?? true,
+            smsNotifications: producerSetting.sms_notifications ?? false,
+            newOrderAlert: producerSetting.new_order_alert ?? true,
+            weeklyReport: producerSetting.weekly_report ?? true,
+            showOnSearch: producerSetting.visible_in_search ?? true,
+            acceptNewSubscribers: producerSetting.accepts_new_subscribers ?? true,
+        });
+        setFarm({
+            farm_name: producerSetting.farm_name ?? "",
+            description: producerSetting.description ?? "",
+            certifications: producerSetting.certifications ?? "",
+            address: producerSetting.address ?? "",
+            city: producerSetting.city ?? "",
+            state: producerSetting.state ?? "",
+            website: producerSetting.website ?? "",
+            delivery_info: producerSetting.delivery_info ?? "",
+        });
+    }, [producerSetting]);
+
+    const handleSave = async () => {
+        if (!farm.farm_name.trim()) {
+            toast({title: "Informe o nome da propriedade", variant: "destructive"});
+            return;
+        }
+        await upsertProducerSetting.mutateAsync({
+            farm_name: farm.farm_name.trim(),
+            description: farm.description.trim() || null,
+            certifications: farm.certifications.trim() || null,
+            address: farm.address.trim() || null,
+            city: farm.city.trim() || null,
+            state: farm.state.trim() || null,
+            website: farm.website.trim() || null,
+            delivery_info: farm.delivery_info.trim() || null,
+            email_notifications: settings.emailNotifications,
+            sms_notifications: settings.smsNotifications,
+            new_order_alert: settings.newOrderAlert,
+            weekly_report: settings.weeklyReport,
+            visible_in_search: settings.showOnSearch,
+            accepts_new_subscribers: settings.acceptNewSubscribers,
+        });
+    };
+
+    const handleChangePassword = async () => {
+        if (newPassword !== confirmPassword) {
+            toast({title: "As senhas não coincidem", variant: "destructive"});
+            return;
+        }
+
+        setIsChangingPassword(true);
+        try {
+            await api.put('/user/password', {
+                current_password: currentPassword,
+                password: newPassword,
+                password_confirmation: confirmPassword,
+            });
+
+            toast({title: "Senha alterada com sucesso!"});
+            setCurrentPassword("");
+            setNewPassword("");
+            setConfirmPassword("");
+        } catch (error: unknown) {
+            const message = error instanceof Error ? error.message : "Erro ao alterar senha";
+            toast({title: "Erro ao alterar senha", description: message, variant: "destructive"});
+        } finally {
+            setIsChangingPassword(false);
+        }
     };
 
     return (
         <DashboardLayout userType="produtor">
             <div className="space-y-6 max-w-3xl">
-                {/* Header */}
                 <div>
                     <h1 className="text-3xl font-display font-semibold">Configurações</h1>
                     <p className="text-muted-foreground mt-1">
-                        Gerencie suas preferências e configurações
+                        Dados da propriedade, visibilidade e notificações
                     </p>
                 </div>
 
-                {/* Notifications */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Propriedade e contato</CardTitle>
+                        <CardDescription>Nome da fazenda, localização e informações públicas</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="farm_name">Nome da propriedade</Label>
+                            <Input
+                                id="farm_name"
+                                value={farm.farm_name}
+                                onChange={(e) => setFarm({...farm, farm_name: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="city">Cidade</Label>
+                                <Input
+                                    id="city"
+                                    value={farm.city}
+                                    onChange={(e) => setFarm({...farm, city: e.target.value})}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="state">Estado (UF)</Label>
+                                <Input
+                                    id="state"
+                                    value={farm.state}
+                                    onChange={(e) => setFarm({...farm, state: e.target.value})}
+                                    maxLength={2}
+                                    disabled={isLoading}
+                                />
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="address">Endereço</Label>
+                            <Input
+                                id="address"
+                                value={farm.address}
+                                onChange={(e) => setFarm({...farm, address: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="description">Descrição</Label>
+                            <Textarea
+                                id="description"
+                                rows={4}
+                                value={farm.description}
+                                onChange={(e) => setFarm({...farm, description: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="certifications">Certificações</Label>
+                            <Textarea
+                                id="certifications"
+                                rows={2}
+                                placeholder="Orgânico, bem-estar animal, etc."
+                                value={farm.certifications}
+                                onChange={(e) => setFarm({...farm, certifications: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="website">Site</Label>
+                            <Input
+                                id="website"
+                                type="url"
+                                placeholder="https://"
+                                value={farm.website}
+                                onChange={(e) => setFarm({...farm, website: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="delivery_info">Informações de entrega</Label>
+                            <Textarea
+                                id="delivery_info"
+                                rows={3}
+                                placeholder="Regiões atendidas, dias de rota, taxas…"
+                                value={farm.delivery_info}
+                                onChange={(e) => setFarm({...farm, delivery_info: e.target.value})}
+                                disabled={isLoading}
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+
                 <Card>
                     <CardHeader>
                         <CardTitle>Notificações</CardTitle>
@@ -41,66 +218,26 @@ const ProdutorConfiguracoes = () => {
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <Label>Notificações por E-mail</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Receba atualizações por e-mail
-                                </p>
+                        {[
+                            {key: "emailNotifications", label: "Notificações por E-mail", desc: "Receba atualizações por e-mail"},
+                            {key: "smsNotifications", label: "Notificações por SMS", desc: "Receba alertas via SMS"},
+                            {key: "newOrderAlert", label: "Alerta de Novo Pedido", desc: "Seja notificado quando receber um pedido"},
+                            {key: "weeklyReport", label: "Relatório Semanal", desc: "Receba um resumo semanal das vendas"},
+                        ].map(({key, label, desc}) => (
+                            <div key={key} className="flex items-center justify-between">
+                                <div>
+                                    <Label>{label}</Label>
+                                    <p className="text-sm text-muted-foreground">{desc}</p>
+                                </div>
+                                <Switch
+                                    checked={settings[key as keyof typeof settings]}
+                                    onCheckedChange={(checked) => setSettings({...settings, [key]: checked})}
+                                />
                             </div>
-                            <Switch
-                                checked={settings.emailNotifications}
-                                onCheckedChange={(checked) =>
-                                    setSettings({...settings, emailNotifications: checked})
-                                }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <Label>Notificações por SMS</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Receba alertas via SMS
-                                </p>
-                            </div>
-                            <Switch
-                                checked={settings.smsNotifications}
-                                onCheckedChange={(checked) =>
-                                    setSettings({...settings, smsNotifications: checked})
-                                }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <Label>Alerta de Novo Pedido</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Seja notificado quando receber um pedido
-                                </p>
-                            </div>
-                            <Switch
-                                checked={settings.newOrderAlert}
-                                onCheckedChange={(checked) =>
-                                    setSettings({...settings, newOrderAlert: checked})
-                                }
-                            />
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <Label>Relatório Semanal</Label>
-                                <p className="text-sm text-muted-foreground">
-                                    Receba um resumo semanal das vendas
-                                </p>
-                            </div>
-                            <Switch
-                                checked={settings.weeklyReport}
-                                onCheckedChange={(checked) =>
-                                    setSettings({...settings, weeklyReport: checked})
-                                }
-                            />
-                        </div>
+                        ))}
                     </CardContent>
                 </Card>
 
-                {/* Visibility */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Visibilidade</CardTitle>
@@ -127,7 +264,7 @@ const ProdutorConfiguracoes = () => {
                             <div>
                                 <Label>Aceitar Novos Assinantes</Label>
                                 <p className="text-sm text-muted-foreground">
-                                    Permita que novos clientes assinem seus produtos
+                                    Permita que novos clientes assinem seus kits de ovos
                                 </p>
                             </div>
                             <Switch
@@ -140,7 +277,6 @@ const ProdutorConfiguracoes = () => {
                     </CardContent>
                 </Card>
 
-                {/* Security */}
                 <Card>
                     <CardHeader>
                         <CardTitle>Segurança</CardTitle>
@@ -151,53 +287,29 @@ const ProdutorConfiguracoes = () => {
                     <CardContent className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="currentPassword">Senha Atual</Label>
-                            <Input id="currentPassword" type="password"/>
+                            <Input id="currentPassword" type="password" value={currentPassword}
+                                   onChange={(e) => setCurrentPassword(e.target.value)}/>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="newPassword">Nova Senha</Label>
-                            <Input id="newPassword" type="password"/>
+                            <Input id="newPassword" type="password" value={newPassword}
+                                   onChange={(e) => setNewPassword(e.target.value)}/>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="confirmPassword">Confirmar Nova Senha</Label>
-                            <Input id="confirmPassword" type="password"/>
+                            <Input id="confirmPassword" type="password" value={confirmPassword}
+                                   onChange={(e) => setConfirmPassword(e.target.value)}/>
                         </div>
-                        <Button variant="outline">Alterar Senha</Button>
+                        <Button variant="outline" onClick={handleChangePassword}
+                                disabled={isChangingPassword || !currentPassword || !newPassword || !confirmPassword}>
+                            {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin mr-2"/>}
+                            Alterar Senha
+                        </Button>
                     </CardContent>
                 </Card>
 
-                {/* Danger Zone */}
-                <Card className="border-destructive/50">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-                        <CardDescription>
-                            Ações irreversíveis para sua conta
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Desativar Conta</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Sua loja ficará invisível para clientes
-                                </p>
-                            </div>
-                            <Button variant="outline">Desativar</Button>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Excluir Conta</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Remove permanentemente sua conta e dados
-                                </p>
-                            </div>
-                            <Button variant="destructive">Excluir</Button>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                {/* Save Button */}
                 <div className="flex justify-end">
-                    <Button variant="hero" onClick={handleSave}>
+                    <Button variant="hero" onClick={() => void handleSave()} disabled={isLoading || upsertProducerSetting.isPending}>
                         Salvar Configurações
                     </Button>
                 </div>

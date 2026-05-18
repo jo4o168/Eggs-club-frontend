@@ -2,6 +2,7 @@ import {ReactNode, useState} from "react";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {Button} from "./ui/button";
 import {useAuth} from "@/contexts/AuthContext";
+import {useProfile} from "@/hooks/useProfiles";
 import {
     CreditCard,
     Crown,
@@ -15,10 +16,12 @@ import {
     ShoppingCart,
     User,
 } from "lucide-react";
+import BrandTitle from "./BrandTitle";
+import {ThemeToggle} from "./ThemeToggle";
 
 interface DashboardLayoutProps {
     children: ReactNode;
-    userType: "producer" | "customer";
+    userType: "producer" | "customer" | "produtor" | "cliente";
 }
 
 const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
@@ -26,17 +29,19 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
     const navigate = useNavigate();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const {profile, producerSettings, signOut} = useAuth();
+    const {data: remoteProfile} = useProfile();
 
     const produtorLinks = [
         {to: "/producer/dashboard", label: "Início", icon: Home},
-        {to: "/producer/produtos", label: "Meus Produtos", icon: Package},
-        {to: "/producer/planos", label: "Planos de Assinatura", icon: Crown},
+        {to: "/producer/produtos", label: "Meus Kit's de Ovos", icon: Package},
+        {to: "/producer/planos", label: "Planos de assinatura", icon: Crown},
         {to: "/producer/pedidos", label: "Pedidos", icon: ShoppingCart},
         {to: "/producer/perfil", label: "Meu Perfil", icon: User},
         {to: "/producer/configuracoes", label: "Configurações", icon: Settings},
     ];
 
     const clienteLinks = [
+        {to: "/produtos", label: "Voltar para Loja", icon: ShoppingCart},
         {to: "/customer/dashboard", label: "Início", icon: Home},
         {to: "/customer/assinatura", label: "Minha Assinatura", icon: Heart},
         {to: "/customer/pedidos", label: "Meus Pedidos", icon: History},
@@ -45,16 +50,17 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
         {to: "/customer/configuracoes", label: "Configurações", icon: Settings},
     ];
 
-    const links = userType === "producer" ? produtorLinks : clienteLinks;
+    const normalizedUserType = userType === "produtor" ? "producer" : userType === "cliente" ? "customer" : userType;
+    const links = normalizedUserType === "producer" ? produtorLinks : clienteLinks;
 
     const handleLogout = async () => {
         await signOut();
         navigate("/");
     };
 
-    const displayName = userType === "producer"
-        ? producerSettings?.farm_name || profile?.name || "Produtor"
-        : profile?.name || "Cliente";
+    const displayName = normalizedUserType === "producer"
+        ? producerSettings?.farm_name || remoteProfile?.name || profile?.name || "Produtor"
+        : remoteProfile?.name || profile?.name || "Cliente";
 
     return (
         <div className="min-h-screen bg-background flex">
@@ -76,12 +82,10 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
                     {/* Logo */}
                     <div className="p-6 border-b border-border">
                         <Link to="/" className="flex items-center gap-2">
-              <span className="text-xl font-display font-semibold text-primary">
-                Egg's Club
-              </span>
+                            <BrandTitle className="text-xl md:text-xl" iconClassName="w-5 h-5 md:w-5 md:h-5" />
                         </Link>
                         <p className="text-xs text-muted-foreground mt-1">
-                            {userType === "producer" ? "Área do Produtor" : "Área do Cliente"}
+                            {normalizedUserType === "producer" ? "Área do Produtor" : "Área do Cliente"}
                         </p>
                     </div>
 
@@ -134,15 +138,29 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
                             <Menu className="w-6 h-6"/>
                         </button>
 
-                        <div className="flex items-center gap-4 ml-auto">
+                        <div className="flex items-center gap-3 ml-auto">
+                            <ThemeToggle/>
+                            {normalizedUserType === "customer" && (
+                                <Link to="/produtos">
+                                    <Button variant="outline" size="sm">Voltar para loja</Button>
+                                </Link>
+                            )}
                             <div className="text-right">
                                 <p className="text-sm font-medium">{displayName}</p>
                                 <p className="text-xs text-muted-foreground">
-                                    {userType === "producer" ? "Produtor" : "Cliente"}
+                                    {normalizedUserType === "producer" ? "Produtor" : "Cliente"}
                                 </p>
                             </div>
-                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
-                                <User className="w-5 h-5 text-primary"/>
+                            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden">
+                                {remoteProfile?.avatar_url ? (
+                                    <img
+                                        src={remoteProfile.avatar_url}
+                                        alt="Avatar"
+                                        className="w-full h-full object-cover"
+                                    />
+                                ) : (
+                                    <User className="w-5 h-5 text-primary"/>
+                                )}
                             </div>
                         </div>
                     </div>

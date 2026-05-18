@@ -3,44 +3,14 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PlanCard from "@/components/PlanCard";
 import {toast} from "@/hooks/use-toast";
-
-const plans = [
-    {
-        id: "quinzenal",
-        name: "Plano Quinzenal",
-        price: "R$ 26,00",
-        frequency: "entrega",
-        description:
-            "O equilíbrio ideal para casais ou famílias pequenas que buscam conveniência.",
-        features: ["12 ovos por entrega", "Entrega a cada 15 dias", "Suporte por WhatsApp"],
-        isPopular: false,
-    },
-    {
-        id: "semanal",
-        name: "Plano Semanal",
-        price: "R$ 25,00",
-        frequency: "entrega",
-        description:
-            "Perfeito para quem ama ovos e usa em todas as refeições. Frescor máximo garantido!",
-        features: ["12 ovos por entrega", "Entrega toda semana", "Suporte prioritário", "Receitas exclusivas"],
-        isPopular: true,
-    },
-    {
-        id: "mensal",
-        name: "Plano Mensal",
-        price: "R$ 28,00",
-        frequency: "entrega",
-        description:
-            "Para quem consome ovos esporadicamente mas não abre mão da qualidade superior.",
-        features: ["12 ovos por entrega", "Entrega mensal", "Suporte por WhatsApp"],
-        isPopular: false,
-    },
-];
+import {usePublicPlans} from "@/hooks/usePublicCatalog";
 
 const Planos = () => {
     const navigate = useNavigate();
+    const {data: plans = []} = usePublicPlans();
+    const activePlans = plans.filter((plan) => plan.is_active);
 
-    const handleSelectPlan = (planId: string) => {
+    const handleSelectPlan = (planId: string | number) => {
         toast({
             title: "Plano selecionado!",
             description: "Faça login ou cadastre-se para continuar.",
@@ -64,14 +34,24 @@ const Planos = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-                        {plans.map((plan) => (
+                        {activePlans.map((plan) => (
                             <PlanCard
                                 key={plan.id}
-                                {...plan}
+                                name={plan.name}
+                                price={`R$ ${Number(plan.price).toFixed(2)}`}
+                                frequency="entrega"
+                                description={plan.description || "Plano de assinatura de ovos frescos."}
+                                isPopular={plan.is_featured}
+                                features={["Qualidade premium", "Entrega recorrente", "Cancelamento flexível"]}
                                 onSelect={() => handleSelectPlan(plan.id)}
                             />
                         ))}
                     </div>
+                    {activePlans.length === 0 && (
+                        <div className="text-center mt-8 text-muted-foreground">
+                            Nenhum plano cadastrado no momento.
+                        </div>
+                    )}
 
                     <div className="mt-16 text-center">
                         <p className="text-sm text-muted-foreground">

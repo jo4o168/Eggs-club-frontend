@@ -1,13 +1,13 @@
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
+import {Label} from "@/components/ui/label";
 import {Badge} from "@/components/ui/badge";
 import {Link} from "react-router-dom";
 import {
     Dialog,
     DialogContent,
-    DialogFooter,
     DialogHeader,
     DialogTitle,
     DialogTrigger,
@@ -18,34 +18,52 @@ import {toast} from "@/hooks/use-toast";
 import {
     useCreateSubscription,
     useCustomerSubscriptions,
-    useSubscriptionPlans,
     useUpdateSubscription
 } from "@/hooks/useSubscriptions";
-import {useProducers} from "@/hooks/useProfiles";
+import {usePublicPlans, usePublicProducers, usePublicProducts} from "@/hooks/usePublicCatalog";
+import {useCreateOrder} from "@/hooks/useOrders";
+import {usePaymentMethods} from "@/hooks/usePayments";
 import {addWeeks, format} from "date-fns";
 import {ptBR} from "date-fns/locale";
 
 const ClienteAssinatura = () => {
     const {data: subscriptions = [], isLoading} = useCustomerSubscriptions();
-    const {data: producers = []} = useProducers();
+    const {data: producers = []} = usePublicProducers();
     const updateSubscription = useUpdateSubscription();
 
     const [changePlanDialogOpen, setChangePlanDialogOpen] = useState(false);
     const [pauseDialogOpen, setPauseDialogOpen] = useState(false);
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [newSubscriptionDialogOpen, setNewSubscriptionDialogOpen] = useState(false);
-    const [selectedSubscription, setSelectedSubscription] = useState<string | null>(null);
+    const [selectedSubscription, setSelectedSubscription] = useState<number | null>(null);
     const [selectedPlanId, setSelectedPlanId] = useState<string>("");
+    const [purchaseMode, setPurchaseMode] = useState<string>("subscription");
+    const [selectedProductId, setSelectedProductId] = useState<string>("");
+    const [oneTimeQuantity, setOneTimeQuantity] = useState<string>("1");
     const [pauseDuration, setPauseDuration] = useState("2");
     const [selectedProducerId, setSelectedProducerId] = useState<string>("");
 
-    const {data: availablePlans = []} = useSubscriptionPlans(selectedProducerId || undefined);
+    const {data: availablePlans = []} = usePublicPlans(selectedProducerId || undefined);
+    const {data: availableProducts = []} = usePublicProducts(selectedProducerId || undefined);
     const createSubscription = useCreateSubscription();
+    const createOrder = useCreateOrder();
+    const {data: paymentMethods = []} = usePaymentMethods();
 
-    const activeSubscription = subscriptions.find(s => s.status === 'active');
-    const currentSubscription = selectedSubscription
-        ? subscriptions.find(s => s.id === selectedSubscription)
-        : activeSubscription;
+    const currentSubscription =
+        selectedSubscription != null
+            ? subscriptions.find((s) => s.id === selectedSubscription) ?? null
+            : null;
+
+    const [newSubPaymentMethodId, setNewSubPaymentMethodId] = useState<number | null>(null);
+
+    useEffect(() => {
+        if (!newSubscriptionDialogOpen || purchaseMode !== "subscription") {
+            return;
+        }
+        const preferred =
+            paymentMethods.find((p) => p.is_default)?.id ?? paymentMethods[0]?.id ?? null;
+        setNewSubPaymentMethodId(preferred);
+    }, [newSubscriptionDialogOpen, purchaseMode, paymentMethods]);
 
     const handlePause = async () => {
         if (!currentSubscription) return;
@@ -66,7 +84,7 @@ const ClienteAssinatura = () => {
         }
     };
 
-    const handleResume = async (subscriptionId: string) => {
+    const handleResume = async (subscriptionId: number) => {
         try {
             await updateSubscription.mutateAsync({
                 id: subscriptionId,
@@ -113,19 +131,47 @@ const ClienteAssinatura = () => {
     };
 
     const handleNewSubscription = async () => {
-        if (!selectedProducerId || !selectedPlanId) {
-            toast({title: "Selecione um producer e um plano", variant: "destructive"});
+        if (!selectedProducerId) {
+            toast({title: "Selecione um produtor", variant: "destructive"});
             return;
         }
 
         try {
-            await createSubscription.mutateAsync({
-                planId: selectedPlanId,
-                producerId: selectedProducerId,
-            });
+            if (purchaseMode === "subscription") {
+                if (!selectedPlanId) {
+                    toast({title: "Selecione um plano", variant: "destructive"});
+                    return;
+                }
+
+                if (paymentMethods.length > 0 && !newSubPaymentMethodId) {
+                    toast({title: "Selecione um método de pagamento", variant: "destructive"});
+                    return;
+                }
+
+                await createSubscription.mutateAsync({
+                    planId: selectedPlanId,
+                    producerId: selectedProducerId,
+                    payment_method_id: newSubPaymentMethodId ?? undefined,
+                });
+            } else {
+                if (!selectedProductId) {
+                    toast({title: "Selecione um kit de ovos", variant: "destructive"});
+                    return;
+                }
+
+                await createOrder.mutateAsync({
+                    product_id: Number(selectedProductId),
+                    quantity: Number(oneTimeQuantity || 1),
+                });
+            }
+
             setNewSubscriptionDialogOpen(false);
             setSelectedProducerId("");
             setSelectedPlanId("");
+            setSelectedProductId("");
+            setOneTimeQuantity("1");
+            setPurchaseMode("subscription");
+            setNewSubPaymentMethodId(null);
         } catch (error) {
             // Error handled in hook
         }
@@ -144,10 +190,21 @@ const ClienteAssinatura = () => {
         }
     };
 
-    const frequencyLabels: Record<string, string> = {
-        'semanal': 'Toda semana',
-        'quinzenal': 'A cada 2 semanas',
-        'mensal': 'Todo mês',
+    const frequencyLabels: Record<number, string> = {
+        0: 'Toda semana',
+        1: 'A cada 2 semanas',
+        2: 'Todo mês',
+    };
+
+    const getFrequencyLabel = (value?: number) => {
+        if (value === undefined || value === null) return 'Frequência variável';
+        return frequencyLabels[value] ?? `Frequência ${value}`;
+    };
+
+    const formatMoney = (value: unknown) => {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) return "0,00";
+        return parsed.toFixed(2).replace('.', ',');
     };
 
     if (isLoading) {
@@ -173,79 +230,152 @@ const ClienteAssinatura = () => {
                             Gerencie suas assinaturas e entregas
                         </p>
                     </div>
-                    <Dialog open={newSubscriptionDialogOpen} onOpenChange={setNewSubscriptionDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button variant="hero">
-                                <Plus className="w-4 h-4 mr-2"/>
-                                Nova Assinatura
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>Nova Assinatura</DialogTitle>
-                            </DialogHeader>
-                            <div className="space-y-4 py-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium">Selecione o Produtor</label>
-                                    <Select value={selectedProducerId} onValueChange={(v) => {
-                                        setSelectedProducerId(v);
-                                        setSelectedPlanId("");
-                                    }}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Escolha um produtor"/>
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {producers.map((producer) => (
-                                                <SelectItem key={producer.id} value={producer.id}>
-                                                    {producer.producer_settings?.farm_name || producer.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                {selectedProducerId && (
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium">Selecione o Plano</label>
-                                        {availablePlans.length === 0 ? (
-                                            <div className="p-4 bg-secondary/50 rounded-lg text-center">
-                                                <p className="text-sm text-muted-foreground">
-                                                    Este produtor ainda não cadastrou planos de assinatura.
-                                                </p>
-                                                <Link to={`/produtor/${selectedProducerId}`}
-                                                      className="text-sm text-primary hover:underline">
-                                                    Ver página do produtor
-                                                </Link>
-                                            </div>
-                                        ) : (
-                                            <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Escolha um plano"/>
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {availablePlans.map((plan) => (
-                                                        <SelectItem key={plan.id} value={plan.id}>
-                                                            {plan.name} -
-                                                            R$ {plan.price.toFixed(2).replace('.', ',')}/{plan.frequency}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                            <DialogFooter>
-                                <Button
-                                    variant="hero"
-                                    onClick={handleNewSubscription}
-                                    disabled={createSubscription.isPending || !selectedProducerId || !selectedPlanId}
-                                >
-                                    {createSubscription.isPending && <Loader2 className="w-4 h-4 animate-spin mr-2"/>}
-                                    Assinar
+                    <div className="flex flex-wrap gap-2 justify-end">
+                        <Dialog
+                            open={newSubscriptionDialogOpen}
+                            onOpenChange={(open) => {
+                                setNewSubscriptionDialogOpen(open);
+                                if (!open) {
+                                    setSelectedProducerId("");
+                                    setSelectedPlanId("");
+                                    setSelectedProductId("");
+                                    setOneTimeQuantity("1");
+                                    setPurchaseMode("subscription");
+                                    setNewSubPaymentMethodId(null);
+                                }
+                            }}
+                        >
+                            <DialogTrigger asChild>
+                                <Button variant="outline">
+                                    <Plus className="w-4 h-4 mr-2"/>
+                                    Nova compra ou assinatura
                                 </Button>
-                            </DialogFooter>
-                        </DialogContent>
-                    </Dialog>
+                            </DialogTrigger>
+                            <DialogContent className="max-h-[90vh] overflow-y-auto max-w-lg">
+                                <DialogHeader>
+                                    <DialogTitle>Nova compra ou assinatura</DialogTitle>
+                                </DialogHeader>
+                                <div className="space-y-4 py-2">
+                                    <div className="space-y-2">
+                                        <Label>Produtor</Label>
+                                        <Select value={selectedProducerId} onValueChange={setSelectedProducerId}>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecione o produtor"/>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {producers.map((p) => (
+                                                    <SelectItem key={p.id} value={String(p.id)}>
+                                                        {p.producerSetting?.farm_name ?? p.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Modalidade</Label>
+                                        <Select value={purchaseMode} onValueChange={setPurchaseMode}>
+                                            <SelectTrigger>
+                                                <SelectValue/>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="subscription">Assinatura</SelectItem>
+                                                <SelectItem value="one_time">Compra única</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    {purchaseMode === "subscription" ? (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>Plano</Label>
+                                                <Select value={selectedPlanId} onValueChange={setSelectedPlanId}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Plano"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {availablePlans.map((plan) => (
+                                                            <SelectItem key={plan.id} value={String(plan.id)}>
+                                                                {plan.name} — R$ {formatMoney(plan.price)}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            {paymentMethods.length > 0 ? (
+                                                <div className="space-y-2">
+                                                    <Label>Método de pagamento</Label>
+                                                    <Select
+                                                        value={newSubPaymentMethodId ? String(newSubPaymentMethodId) : ""}
+                                                        onValueChange={(v) => setNewSubPaymentMethodId(Number(v))}
+                                                    >
+                                                        <SelectTrigger>
+                                                            <SelectValue placeholder="Selecione"/>
+                                                        </SelectTrigger>
+                                                        <SelectContent>
+                                                            {paymentMethods.map((pm) => (
+                                                                <SelectItem key={pm.id} value={String(pm.id)}>
+                                                                    {pm.type}
+                                                                    {pm.last_four ? ` ·••• ${pm.last_four}` : ""}
+                                                                </SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            ) : null}
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="space-y-2">
+                                                <Label>Kit de ovos</Label>
+                                                <Select value={selectedProductId} onValueChange={setSelectedProductId}>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Produto"/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {availableProducts.map((prod) => (
+                                                            <SelectItem key={prod.id} value={String(prod.id)}>
+                                                                {prod.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label>Quantidade</Label>
+                                                <Select value={oneTimeQuantity} onValueChange={setOneTimeQuantity}>
+                                                    <SelectTrigger>
+                                                        <SelectValue/>
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        {[1, 2, 3, 4, 5, 6, 8, 10].map((n) => (
+                                                            <SelectItem key={n} value={String(n)}>
+                                                                {n}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </>
+                                    )}
+                                    <Button
+                                        variant="hero"
+                                        className="w-full"
+                                        onClick={() => void handleNewSubscription()}
+                                        disabled={createSubscription.isPending || createOrder.isPending}
+                                    >
+                                        {(createSubscription.isPending || createOrder.isPending) && (
+                                            <Loader2 className="w-4 h-4 mr-2 animate-spin"/>
+                                        )}
+                                        Confirmar
+                                    </Button>
+                                </div>
+                            </DialogContent>
+                        </Dialog>
+                        <Link to="/produtos">
+                            <Button variant="hero">
+                                Conhecer novos planos ou produtos
+                            </Button>
+                        </Link>
+                    </div>
                 </div>
 
                 {subscriptions.length === 0 ? (
@@ -256,8 +386,8 @@ const ClienteAssinatura = () => {
                             <p className="text-muted-foreground mb-4">
                                 Comece a receber ovos frescos diretamente dos produtores!
                             </p>
-                            <Link to="/produtores">
-                                <Button variant="hero">Encontrar Produtores</Button>
+                            <Link to="/produtos">
+                                <Button variant="hero">Ir para a loja</Button>
                             </Link>
                         </CardContent>
                     </Card>
@@ -273,7 +403,7 @@ const ClienteAssinatura = () => {
                                             <CardTitle
                                                 className="text-xl">{subscription.plan?.name || 'Plano Personalizado'}</CardTitle>
                                             <p className="text-sm text-muted-foreground">
-                                                {subscription.plan?.frequency ? frequencyLabels[subscription.plan.frequency] : 'Frequência variável'}
+                                                {getFrequencyLabel(subscription.plan?.frequency)}
                                             </p>
                                         </div>
                                     </div>
@@ -282,7 +412,7 @@ const ClienteAssinatura = () => {
                                         <span className="text-2xl font-bold text-primary">
                       R$ {subscription.plan?.price?.toFixed(2).replace('.', ',') || '0,00'}
                                             <span className="text-sm font-normal text-muted-foreground">
-                        /{subscription.plan?.frequency || 'período'}
+                        /{getFrequencyLabel(subscription.plan?.frequency)}
                       </span>
                     </span>
                                     </div>
@@ -404,13 +534,18 @@ const ClienteAssinatura = () => {
                                                                     </SelectTrigger>
                                                                     <SelectContent>
                                                                         {availablePlans.map((plan) => (
-                                                                            <SelectItem key={plan.id} value={plan.id}>
+                                                                            <SelectItem key={plan.id} value={String(plan.id)}>
                                                                                 {plan.name} -
-                                                                                R$ {plan.price.toFixed(2).replace('.', ',')}/{plan.frequency}
+                                                                                R$ {formatMoney(plan.price)}/{plan.frequency}
                                                                             </SelectItem>
                                                                         ))}
                                                                     </SelectContent>
                                                                 </Select>
+                                                                {availablePlans.length === 0 && (
+                                                                    <p className="text-xs text-muted-foreground">
+                                                                        Nenhum plano ativo encontrado para este produtor.
+                                                                    </p>
+                                                                )}
                                                             </div>
                                                             <Button
                                                                 variant="hero"

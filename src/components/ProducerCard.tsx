@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 type CardColor = "green" | "yellow" | "blue";
 
 interface ProducerCardProps {
-  id: string;
+  id: string | number;
   name: string;
   displayName: string;
   owner: string;

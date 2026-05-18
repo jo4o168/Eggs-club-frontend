@@ -3,59 +3,11 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {Button} from "@/components/ui/button";
 import {ArrowLeft, MapPin, Phone, Mail} from "lucide-react";
-
-const producersData: Record<string, {
-    name: string;
-    displayName: string;
-    owner: string;
-    location: string;
-    description: string;
-    fullDescription: string;
-    color: string;
-    phone: string;
-    email: string;
-}> = {
-    "sitio-verde": {
-        name: "Sítio Verde",
-        displayName: "Sítio Verde",
-        owner: "Família Almeida",
-        location: "Piraju, SP",
-        description: "Criação de galinhas caipiras há 3 gerações",
-        fullDescription:
-            "Há 3 gerações, a Família Almeida se dedica à criação de galinhas caipiras livres, com alimentação natural e muito espaço para ciscar e se desenvolver. Nossas aves são criadas soltas em um ambiente natural, alimentadas com grãos selecionados e restos de vegetais orgânicos. Acreditamos que galinhas felizes produzem ovos mais saborosos e nutritivos.",
-        color: "producer-card-green",
-        phone: "(14) 99999-1111",
-        email: "contato@sitioverde.com.br",
-    },
-    "chacara-sol": {
-        name: "Chácara Sol Nascente",
-        displayName: "Chácara Sol",
-        owner: "Roberto & Lúcia",
-        location: "Sarutaiá, SP",
-        description: "Manejo sustentável focado no bem-estar animal",
-        fullDescription:
-            "Roberto e Lúcia cuidam de suas galinhas com um manejo sustentável, focados no bem-estar animal e na produção de ovos com a gema bem amarelinha e saborosa. Nossa chácara utiliza técnicas de permacultura e agroecologia, garantindo um produto 100% natural e livre de agrotóxicos. Cada ovo é coletado manualmente e inspecionado com carinho.",
-        color: "producer-card-yellow",
-        phone: "(14) 99999-2222",
-        email: "contato@chacarasol.com.br",
-    },
-    "granja-azul": {
-        name: "Granja Ovos Azuis",
-        displayName: "Granja Azul",
-        owner: "Sra. Elvira",
-        location: "Fartura, SP",
-        description: "Especializada em raças de ovos azulados",
-        fullDescription:
-            "Especializada em raças que botam ovos de casca azulada, a Sra. Elvira oferece um produto diferenciado, nutritivo e que encanta pela beleza e qualidade. Nossas galinhas Araucanas e Ameraucanas são criadas em um ambiente tranquilo, com acesso a pastagem verde e alimentação balanceada. Os ovos azuis são conhecidos por terem menos colesterol e mais ômega-3.",
-        color: "producer-card-blue",
-        phone: "(14) 99999-3333",
-        email: "contato@granjaazul.com.br",
-    },
-};
+import {usePublicProducer} from "@/hooks/usePublicCatalog";
 
 const ProdutorDetalhe = () => {
     const {id} = useParams<{ id: string }>();
-    const producer = id ? producersData[id] : null;
+    const {data: producer} = usePublicProducer(id);
 
     if (!producer) {
         return (
@@ -92,30 +44,30 @@ const ProdutorDetalhe = () => {
 
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                         <div
-                            className={`${producer.color} rounded-2xl h-64 lg:h-96 flex items-center justify-center`}
+                            className="producer-card-green rounded-2xl h-64 lg:h-96 flex items-center justify-center"
                         >
               <span className="text-4xl lg:text-5xl font-display font-semibold text-foreground/80">
-                {producer.displayName}
+                {(producer.producerSetting?.farm_name || producer.name).slice(0, 24)}
               </span>
                         </div>
 
                         <div className="space-y-6">
                             <div>
                                 <h1 className="text-3xl font-display font-semibold mb-2">
-                                    {producer.name}
+                                    {producer.producerSetting?.farm_name || producer.name}
                                 </h1>
                                 <p className="text-lg text-muted-foreground">
-                                    {producer.owner}
+                                    {producer.name}
                                 </p>
                             </div>
 
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <MapPin className="w-5 h-5 text-primary"/>
-                                <span>{producer.location}</span>
+                                <span>{[producer.producerSetting?.city, producer.producerSetting?.state].filter(Boolean).join(", ") || "Local não informado"}</span>
                             </div>
 
                             <p className="text-foreground leading-relaxed">
-                                {producer.fullDescription}
+                                {producer.producerSetting?.description || "Produtor parceiro da Eggs Club."}
                             </p>
 
                             <div className="bg-secondary rounded-xl p-6 space-y-4">
@@ -123,7 +75,7 @@ const ProdutorDetalhe = () => {
                                 <div className="space-y-3">
                                     <div className="flex items-center gap-3">
                                         <Phone className="w-5 h-5 text-primary"/>
-                                        <span>{producer.phone}</span>
+                                        <span>{producer.phone || "Telefone não informado"}</span>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <Mail className="w-5 h-5 text-primary"/>

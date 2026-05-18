@@ -34,6 +34,36 @@
     --font-body: 'Inter', sans-serif;
 }
 
+.dark {
+    --color-background: hsl(25 22% 11%);
+    --color-foreground: hsl(35 30% 94%);
+    --color-card: hsl(25 20% 15%);
+    --color-card-foreground: hsl(35 30% 94%);
+    --color-popover: hsl(25 20% 15%);
+    --color-popover-foreground: hsl(35 30% 94%);
+    --color-primary: hsl(24 90% 55%);
+    --color-primary-foreground: hsl(25 22% 8%);
+    --color-secondary: hsl(25 18% 20%);
+    --color-secondary-foreground: hsl(35 25% 92%);
+    --color-muted: hsl(25 14% 22%);
+    --color-muted-foreground: hsl(35 12% 62%);
+    --color-accent: hsl(25 22% 24%);
+    --color-accent-foreground: hsl(35 30% 94%);
+    --color-destructive: hsl(0 62% 48%);
+    --color-destructive-foreground: hsl(0 0% 100%);
+    --color-border: hsl(25 14% 26%);
+    --color-input: hsl(25 14% 26%);
+    --color-ring: hsl(24 90% 55%);
+    --color-sidebar-background: hsl(25 22% 12%);
+    --color-sidebar-foreground: hsl(35 20% 90%);
+    --color-sidebar-primary: hsl(24 90% 55%);
+    --color-sidebar-primary-foreground: hsl(25 22% 8%);
+    --color-sidebar-accent: hsl(25 18% 20%);
+    --color-sidebar-accent-foreground: hsl(35 25% 92%);
+    --color-sidebar-border: hsl(25 14% 24%);
+    --color-sidebar-ring: hsl(24 90% 55%);
+}
+
 @layer base {
     * {
         border-color: var(--color-border);
@@ -51,6 +81,13 @@
 }
 
 @layer components {
+    .container {
+        width: 100%;
+        margin-inline: auto;
+        padding-inline: 1rem;
+        max-width: 1200px;
+    }
+
     .hero-title {
         font-size: clamp(2.25rem, 5vw, 3.75rem);
         font-weight: 500;

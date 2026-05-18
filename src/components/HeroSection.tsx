@@ -14,11 +14,18 @@ const HeroSection = () => {
           Assine nosso clube e receba ovos caipiras de produtores locais com a
           frequência que desejar.
         </p>
-        <Link to="/planos">
-          <Button variant="hero" className="animate-slide-up">
-            Conhecer os planos
-          </Button>
-        </Link>
+        <div className="flex items-center justify-center gap-3 animate-slide-up">
+          <Link to="/produtos">
+            <Button variant="hero">
+              Ver produtos
+            </Button>
+          </Link>
+          <Link to="/planos">
+            <Button variant="outline">
+              Ver planos
+            </Button>
+          </Link>
+        </div>
       </div>
     </section>
   );
