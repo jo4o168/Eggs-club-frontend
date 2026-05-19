@@ -1,41 +1,13 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import ProducerCard from "@/components/ProducerCard";
-
-const producers = [
-    {
-        id: "sitio-verde",
-        name: "Sítio Verde",
-        displayName: "Sítio Verde",
-        owner: "Família Almeida",
-        location: "Piraju, SP",
-        description:
-            "Há 3 gerações, a Família Almeida se dedica à criação de galinhas caipiras livres, com alimentação natural e muito espaço para ciscar e se desenvolver.",
-        color: "green" as const,
-    },
-    {
-        id: "chacara-sol",
-        name: "Chácara Sol Nascente",
-        displayName: "Chácara Sol",
-        owner: "Roberto & Lúcia",
-        location: "Sarutaiá, SP",
-        description:
-            "Roberto e Lúcia cuidam de suas galinhas com um manejo sustentável, focados no bem-estar animal e na produção de ovos com a gema bem amarelinha e saborosa.",
-        color: "yellow" as const,
-    },
-    {
-        id: "granja-azul",
-        name: "Granja Ovos Azuis",
-        displayName: "Granja Azul",
-        owner: "Sra. Elvira",
-        location: "Fartura, SP",
-        description:
-            "Especializada em raças que botam ovos de casca azulada, a Sra. Elvira oferece um produto diferenciado, nutritivo e que encanta pela beleza e qualidade.",
-        color: "blue" as const,
-    },
-];
+import { usePublicProducers } from "@/hooks/usePublicCatalog";
+import {Link} from "react-router-dom";
 
 const Produtores = () => {
+    const { data: producers = [] } = usePublicProducers();
+    const colors = ["green", "yellow", "blue"] as const;
+
     return (
         <div className="min-h-screen flex flex-col">
             <Header/>
@@ -53,8 +25,22 @@ const Produtores = () => {
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                        {producers.map((producer) => (
-                            <ProducerCard key={producer.id} {...producer} />
+                        {producers.map((producer, index) => (
+                            <ProducerCard
+                                key={producer.id}
+                                id={producer.id}
+                                name={producer.producerSetting?.farm_name || producer.name}
+                                displayName={(producer.producerSetting?.farm_name || producer.name).slice(0, 16)}
+                                owner={producer.name}
+                                location={[
+                                    producer.producerSetting?.city,
+                                    producer.producerSetting?.state,
+                                ]
+                                    .filter(Boolean)
+                                    .join(", ") || "Local não informado"}
+                                description={producer.producerSetting?.description || "Produtor parceiro da Eggs Club."}
+                                color={colors[index % colors.length]}
+                            />
                         ))}
                     </div>
 
@@ -66,12 +52,12 @@ const Produtores = () => {
                             Junte-se à nossa rede de produtores e alcance clientes que valorizam
                             a qualidade e procedência dos alimentos.
                         </p>
-                        <a
-                            href="/login"
+                        <Link
+                            to="/login?mode=signup&type=producer"
                             className="inline-flex items-center justify-center bg-primary text-primary-foreground px-6 py-3 rounded-full font-semibold hover:bg-primary/90 transition-colors"
                         >
                             Cadastre-se como produtor
-                        </a>
+                        </Link>
                     </div>
                 </div>
             </main>

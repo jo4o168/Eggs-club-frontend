@@ -69,17 +69,32 @@ const ClientePagamentos = () => {
     };
 
     const handleAddCard = async () => {
+        if (cardType === "pix") {
+            await createPaymentMethod.mutateAsync({
+                type: "pix",
+                is_default: paymentMethods.length === 0,
+            });
+            setIsAddDialogOpen(false);
+            return;
+        }
+
         const cleaned = cardNumber.replace(/\s/g, "");
         if (cleaned.length < 13) {
             toast({title: "Número do cartão inválido", variant: "destructive"});
             return;
         }
 
+        const [monthStr = "", yearStr = ""] = cardExpiry.split("/");
+        const expirationMonth = Number(monthStr);
+        const expirationYear = yearStr ? Number(`20${yearStr}`) : undefined;
+
         try {
             await createPaymentMethod.mutateAsync({
                 type: cardType,
                 card_last_four: cleaned.slice(-4),
                 card_brand: detectCardBrand(cleaned),
+                expiration_month: expirationMonth || undefined,
+                expiration_year: expirationYear || undefined,
                 is_default: paymentMethods.length === 0,
             });
             setIsAddDialogOpen(false);
@@ -92,11 +107,11 @@ const ClientePagamentos = () => {
         }
     };
 
-    const handleSetDefault = async (id: string) => {
+    const handleSetDefault = async (id: number) => {
         await setDefaultPaymentMethod.mutateAsync(id);
     };
 
-    const handleRemoveCard = async (id: string) => {
+    const handleRemoveCard = async (id: number) => {
         await deletePaymentMethod.mutateAsync(id);
     };
 
@@ -225,7 +240,7 @@ const ClientePagamentos = () => {
                             </div>
                         ) : (
                             <div className="space-y-4">
-                                {paymentMethods.map((method) => (
+                                {paymentMethods.map((method: any) => (
                                     <div
                                         key={method.id}
                                         className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg"
@@ -240,7 +255,7 @@ const ClientePagamentos = () => {
                           <span className="font-medium">
                             {method.type === 'pix'
                                 ? 'Pix'
-                                : `${method.card_brand || 'Cartão'} •••• ${method.card_last_four || '****'}`
+                                : `${method.card_brand || 'Cartão'} •••• ${method.last_four || '****'}`
                             }
                           </span>
                                                     {method.is_default && (

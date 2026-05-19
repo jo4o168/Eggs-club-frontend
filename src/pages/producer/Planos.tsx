@@ -10,15 +10,24 @@ import {Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,} from "
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue,} from "@/components/ui/select";
 import {Crown, Loader2, Pencil, Plus, Star, Trash2} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
-import {useCreatePlan, useDeletePlan, useProducerPlans, useUpdatePlan} from "@/hooks/useSubscriptions";
+import {
+    useCreatePlan,
+    useDeletePlan,
+    useProducerPlans,
+    useTogglePlanActive,
+    useTogglePlanFeatured,
+    useUpdatePlan
+} from "@/hooks/useSubscriptions";
 
-type SubscriptionFrequency = Database['public']['Enums']['subscription_frequency'];
+type SubscriptionFrequency = 0 | 1 | 2;
 
 const ProdutorPlanos = () => {
     const {data: plans = [], isLoading} = useProducerPlans();
     const createPlan = useCreatePlan();
     const updatePlan = useUpdatePlan();
     const deletePlan = useDeletePlan();
+    const togglePlanActive = useTogglePlanActive();
+    const togglePlanFeatured = useTogglePlanFeatured();
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [editingPlan, setEditingPlan] = useState<typeof plans[0] | null>(null);
@@ -27,14 +36,14 @@ const ProdutorPlanos = () => {
         description: "",
         price: "",
         eggs_quantity: "",
-        frequency: "semanal" as SubscriptionFrequency,
+        frequency: 0 as SubscriptionFrequency,
         is_featured: false,
     });
 
     const frequencyLabels: Record<SubscriptionFrequency, string> = {
-        'semanal': 'Semanal',
-        'quinzenal': 'Quinzenal',
-        'mensal': 'Mensal',
+        0: 'Semanal',
+        1: 'Quinzenal',
+        2: 'Mensal',
     };
 
     const handleOpenDialog = (plan?: typeof plans[0]) => {
@@ -55,7 +64,7 @@ const ProdutorPlanos = () => {
                 description: "",
                 price: "",
                 eggs_quantity: "",
-                frequency: "semanal",
+                frequency: 0,
                 is_featured: false,
             });
         }
@@ -96,23 +105,17 @@ const ProdutorPlanos = () => {
         }
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (id: number) => {
         if (!confirm("Tem certeza que deseja excluir este plano?")) return;
         await deletePlan.mutateAsync(id);
     };
 
     const toggleActive = async (plan: typeof plans[0]) => {
-        await updatePlan.mutateAsync({
-            id: plan.id,
-            is_active: !plan.is_active,
-        });
+        await togglePlanActive.mutateAsync(plan.id);
     };
 
     const toggleFeatured = async (plan: typeof plans[0]) => {
-        await updatePlan.mutateAsync({
-            id: plan.id,
-            is_featured: !plan.is_featured,
-        });
+        await togglePlanFeatured.mutateAsync(plan.id);
     };
 
     if (isLoading) {
@@ -135,7 +138,8 @@ const ProdutorPlanos = () => {
                             Planos de Assinatura
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            Crie e gerencie os planos que os clientes podem assinar
+                            Defina preço, quantidade de ovos e frequência. Planos ativos aparecem na loja para o cliente
+                            escolher ao assinar um kit.
                         </p>
                     </div>
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -204,18 +208,18 @@ const ProdutorPlanos = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="frequency">Frequência</Label>
                                     <Select
-                                        value={formData.frequency}
-                                        onValueChange={(value: SubscriptionFrequency) =>
-                                            setFormData({...formData, frequency: value})
+                                        value={String(formData.frequency)}
+                                        onValueChange={(value) =>
+                                            setFormData({...formData, frequency: Number(value) as SubscriptionFrequency})
                                         }
                                     >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Selecione a frequência"/>
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="semanal">Semanal</SelectItem>
-                                            <SelectItem value="quinzenal">Quinzenal</SelectItem>
-                                            <SelectItem value="mensal">Mensal</SelectItem>
+                                            <SelectItem value="0">Semanal</SelectItem>
+                                            <SelectItem value="1">Quinzenal</SelectItem>
+                                            <SelectItem value="2">Mensal</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -257,7 +261,8 @@ const ProdutorPlanos = () => {
                             <Crown className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4"/>
                             <h3 className="text-lg font-semibold mb-2">Nenhum plano cadastrado</h3>
                             <p className="text-muted-foreground mb-4">
-                                Crie planos de assinatura para que clientes possam assinar seus produtos
+                                Crie planos de assinatura para que clientes possam assinar seus kits de ovos
+                                
                             </p>
                             <Button variant="hero" onClick={() => handleOpenDialog()}>
                                 <Plus className="w-4 h-4 mr-2"/>

@@ -10,7 +10,7 @@ import {useAuth} from "@/contexts/AuthContext";
 import {Loader2} from "lucide-react";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog";
 
-const API_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8000/api";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 
 const ClienteConfiguracoes = () => {
     const {user} = useAuth();
@@ -30,9 +30,6 @@ const ClienteConfiguracoes = () => {
     const [newEmail, setNewEmail] = useState("");
     const [isChangingEmail, setIsChangingEmail] = useState(false);
     const [emailDialogOpen, setEmailDialogOpen] = useState(false);
-
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deactivateDialogOpen, setDeactivateDialogOpen] = useState(false);
 
     const handleSaveNotifications = () => {
         toast({title: "Preferências de notificação salvas!"});
@@ -111,16 +108,6 @@ const ClienteConfiguracoes = () => {
         } finally {
             setIsChangingEmail(false);
         }
-    };
-
-    const handleDeactivateAccount = async () => {
-        toast({title: "Conta desativada", description: "Sua conta foi desativada temporariamente."});
-        setDeactivateDialogOpen(false);
-    };
-
-    const handleDeleteAccount = async () => {
-        toast({title: "Solicitação enviada", description: "Sua solicitação de exclusão foi enviada."});
-        setDeleteDialogOpen(false);
     };
 
     return (
@@ -246,60 +233,6 @@ const ClienteConfiguracoes = () => {
                             {isChangingPassword && <Loader2 className="w-4 h-4 animate-spin mr-2"/>}
                             Alterar Senha
                         </Button>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-destructive/50">
-                    <CardHeader>
-                        <CardTitle className="text-destructive">Zona de Perigo</CardTitle>
-                        <CardDescription>Ações irreversíveis para sua conta</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Desativar Conta</p>
-                                <p className="text-sm text-muted-foreground">Sua conta ficará inativa
-                                    temporariamente</p>
-                            </div>
-                            <Dialog open={deactivateDialogOpen} onOpenChange={setDeactivateDialogOpen}>
-                                <DialogTrigger asChild><Button variant="outline">Desativar</Button></DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader><DialogTitle>Desativar Conta</DialogTitle></DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <p className="text-muted-foreground">Tem certeza que deseja desativar sua
-                                            conta?</p>
-                                        <div className="flex gap-3">
-                                            <Button variant="outline" className="flex-1"
-                                                    onClick={() => setDeactivateDialogOpen(false)}>Cancelar</Button>
-                                            <Button variant="destructive" className="flex-1"
-                                                    onClick={handleDeactivateAccount}>Desativar Conta</Button>
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="font-medium">Excluir Conta</p>
-                                <p className="text-sm text-muted-foreground">Remove permanentemente sua conta e
-                                    dados</p>
-                            </div>
-                            <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                                <DialogTrigger asChild><Button variant="destructive">Excluir</Button></DialogTrigger>
-                                <DialogContent>
-                                    <DialogHeader><DialogTitle>Excluir Conta</DialogTitle></DialogHeader>
-                                    <div className="space-y-4 py-4">
-                                        <p className="text-muted-foreground">Esta ação não pode ser desfeita.</p>
-                                        <div className="flex gap-3">
-                                            <Button variant="outline" className="flex-1"
-                                                    onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-                                            <Button variant="destructive" className="flex-1"
-                                                    onClick={handleDeleteAccount}>Excluir Permanentemente</Button>
-                                        </div>
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
                     </CardContent>
                 </Card>
             </div>

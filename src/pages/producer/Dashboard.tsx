@@ -23,7 +23,7 @@ const ProdutorDashboard = () => {
     }
 
     const statsData = [
-        {title: "Produtos Ativos", value: stats?.productsCount || 0, icon: Package, change: "produtos cadastrados"},
+        {title: "Kits de Ovos Ativos", value: stats?.productsCount || 0, icon: Package, change: "kits cadastrados"},
         {
             title: "Pedidos Pendentes",
             value: stats?.pendingOrdersCount || 0,

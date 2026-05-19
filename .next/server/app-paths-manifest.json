@@ -1,0 +1,9 @@
+{
+  "/recuperar-senha/page": "app/recuperar-senha/page.js",
+  "/produtos/page": "app/produtos/page.js",
+  "/reset-password/page": "app/reset-password/page.js",
+  "/page": "app/page.js",
+  "/login/page": "app/login/page.js",
+  "/producer/dashboard/page": "app/producer/dashboard/page.js",
+  "/producer/produtos/page": "app/producer/produtos/page.js"
+}
