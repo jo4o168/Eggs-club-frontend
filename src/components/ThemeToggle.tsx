@@ -2,16 +2,22 @@
 
 import {Moon, Sun} from "lucide-react";
 import {useTheme} from "next-themes";
-import {useEffect, useState} from "react";
+import {useSyncExternalStore} from "react";
 import {Button} from "@/components/ui/button";
+
+const emptySubscribe = () => () => {};
+
+function useIsClient() {
+    return useSyncExternalStore(
+        emptySubscribe,
+        () => true,
+        () => false,
+    );
+}
 
 export function ThemeToggle() {
     const {setTheme, resolvedTheme} = useTheme();
-    const [mounted, setMounted] = useState(false);
-
-    useEffect(() => {
-        setMounted(true);
-    }, []);
+    const mounted = useIsClient();
 
     if (!mounted) {
         return <div className="h-10 w-10 shrink-0" aria-hidden/>;
