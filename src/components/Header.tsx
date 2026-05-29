@@ -10,7 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "./ui/dropdown-menu";
 import {CreditCard, Heart, LayoutDashboard, LogOut, Search, Settings, ShoppingCart, Store, User} from "lucide-react";
-import {useEffect, useMemo, useState} from "react";
+import {useMemo, useState} from "react";
 import {usePublicProducts} from "@/hooks/usePublicCatalog";
 import BrandTitle from "./BrandTitle";
 import {ThemeToggle} from "./ThemeToggle";
@@ -23,21 +23,20 @@ const Header = () => {
     const {data: serverCartItems} = useCustomerCart();
     const {data: publicProducts = []} = usePublicProducts();
 
-    const [searchValue, setSearchValue] = useState("");
-    const [cartCount, setCartCount] = useState(0);
+    const urlQuery = useMemo(
+        () => new URLSearchParams(location.search).get("q") ?? "",
+        [location.search],
+    );
+
+    const [draftSearch, setDraftSearch] = useState("");
     const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const searchValue = isSearchFocused ? draftSearch : urlQuery;
 
-    useEffect(() => {
-        const params = new URLSearchParams(location.search);
-        setSearchValue(params.get("q") ?? "");
-    }, [location.search]);
-
-    useEffect(() => {
+    const cartCount = useMemo(() => {
         if (user && profile?.role === "customer") {
-            setCartCount(serverCartItemCount(serverCartItems));
-        } else {
-            setCartCount(0);
+            return serverCartItemCount(serverCartItems);
         }
+        return 0;
     }, [user, profile?.role, serverCartItems]);
 
     const handleLogout = async () => {
@@ -77,7 +76,6 @@ const Header = () => {
         params.set("q", productName);
         params.set("product", String(productId));
         navigate({pathname: "/produtos", search: `?${params.toString()}`});
-        setSearchValue(productName);
         setIsSearchFocused(false);
     };
 
@@ -106,8 +104,11 @@ const Header = () => {
                             <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"/>
                             <Input
                                 value={searchValue}
-                                onChange={(e) => setSearchValue(e.target.value)}
-                                onFocus={() => setIsSearchFocused(true)}
+                                onChange={(e) => setDraftSearch(e.target.value)}
+                                onFocus={() => {
+                                    setDraftSearch(urlQuery);
+                                    setIsSearchFocused(true);
+                                }}
                                 onBlur={() => setTimeout(() => setIsSearchFocused(false), 120)}
                                 placeholder="O que você procura?"
                                 className="pl-9 h-9 rounded-full"
