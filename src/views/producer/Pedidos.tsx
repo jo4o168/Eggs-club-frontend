@@ -1,5 +1,6 @@
 import {useMemo, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import {OrderDateRangeFilter} from "@/components/OrderDateRangeFilter";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
 import {Badge} from "@/components/ui/badge";
@@ -12,12 +13,14 @@ import {
 } from "@/components/ui/select";
 import {Loader2, User} from "lucide-react";
 import {Order, useProducerOrders, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {filterByCreatedAtDateRange, type OrderDateRange} from "@/lib/orderDateRange";
 import {Link} from "react-router-dom";
 
 const ProdutorPedidos = () => {
     const {data: orders = [], isLoading} = useProducerOrders();
     const updateOrderStatus = useUpdateOrderStatus();
     const [filter, setFilter] = useState<string>("todos");
+    const [dateRange, setDateRange] = useState<OrderDateRange>({from: "", to: ""});
 
     const updateStatus = async (orderId: number, newStatus: Order["status"]) => {
         await updateOrderStatus.mutateAsync({id: orderId, status: newStatus});
@@ -44,13 +47,13 @@ const ProdutorPedidos = () => {
         cancelled: "Cancelado",
     };
 
-    const filteredOrders = useMemo(
-        () =>
-        filter === "todos"
-            ? orders
-            : orders.filter((order) => order.status === filter),
-        [filter, orders]
-    );
+    const filteredOrders = useMemo(() => {
+        const byStatus =
+            filter === "todos"
+                ? orders
+                : orders.filter((order) => order.status === filter);
+        return filterByCreatedAtDateRange(byStatus, dateRange);
+    }, [filter, orders, dateRange]);
 
     if (isLoading) {
         return (
@@ -66,27 +69,30 @@ const ProdutorPedidos = () => {
         <DashboardLayout userType="produtor">
             <div className="space-y-6">
                 {/* Header */}
-                <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-end justify-between flex-wrap gap-4">
                     <div>
                         <h1 className="text-3xl font-display font-semibold">Pedidos</h1>
                         <p className="text-muted-foreground mt-1">
                             Gerencie os pedidos dos seus clientes
                         </p>
                     </div>
-                    <Select value={filter} onValueChange={setFilter}>
-                        <SelectTrigger className="w-[180px]">
-                            <SelectValue placeholder="Filtrar por status"/>
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="todos">Todos</SelectItem>
-                            <SelectItem value="pending">Pendentes</SelectItem>
-                            <SelectItem value="confirmed">Confirmados</SelectItem>
-                            <SelectItem value="preparing">Em preparo</SelectItem>
-                            <SelectItem value="shipped">Enviados</SelectItem>
-                            <SelectItem value="delivered">Entregues</SelectItem>
-                            <SelectItem value="cancelled">Cancelados</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    <div className="flex flex-wrap items-end gap-3">
+                        <OrderDateRangeFilter value={dateRange} onChange={setDateRange}/>
+                        <Select value={filter} onValueChange={setFilter}>
+                            <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Filtrar por status"/>
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="todos">Todos</SelectItem>
+                                <SelectItem value="pending">Pendentes</SelectItem>
+                                <SelectItem value="confirmed">Confirmados</SelectItem>
+                                <SelectItem value="preparing">Em preparo</SelectItem>
+                                <SelectItem value="shipped">Enviados</SelectItem>
+                                <SelectItem value="delivered">Entregues</SelectItem>
+                                <SelectItem value="cancelled">Cancelados</SelectItem>
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {/* Orders List */}
@@ -94,7 +100,9 @@ const ProdutorPedidos = () => {
                     {filteredOrders.length === 0 && (
                         <Card>
                             <CardContent className="py-10 text-center text-muted-foreground">
-                                Nenhum pedido encontrado.
+                                {orders.length === 0
+                                    ? "Nenhum pedido encontrado."
+                                    : "Nenhum pedido neste período/filtro."}
                             </CardContent>
                         </Card>
                     )}

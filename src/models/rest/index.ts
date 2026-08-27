@@ -1,2 +1,2 @@
 export * from "@/services/AuthService"
-export * from "./ApiResponse.ts"
+export * from "./ApiResponse"

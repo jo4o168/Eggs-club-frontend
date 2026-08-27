@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "@/pages/customer/Assinatura";
+export { default } from "@/views/customer/Assinatura";

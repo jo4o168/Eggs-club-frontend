@@ -16,8 +16,8 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 export default function ResetPasswordForm() {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const token = searchParams.get("token") ?? "";
-    const emailParam = searchParams.get("email") ?? "";
+    const token = searchParams?.get("token") ?? "";
+    const emailParam = searchParams?.get("email") ?? "";
 
     const [password, setPassword] = useState("");
     const [passwordConfirmation, setPasswordConfirmation] = useState("");

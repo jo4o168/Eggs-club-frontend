@@ -1,14 +1,14 @@
 import {useEffect, useState} from "react";
 import {Link, useLocation, useNavigate} from "react-router-dom";
-import Header from "@/components/Header.tsx";
-import Footer from "@/components/Footer.tsx";
-import {Button} from "@/components/ui/button.tsx";
-import {Input} from "@/components/ui/input.tsx";
-import {Label} from "@/components/ui/label.tsx";
-import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs.tsx";
-import {useAuth, ProfileRole} from "@/contexts/AuthContext.tsx";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import {Button} from "@/components/ui/button";
+import {Input} from "@/components/ui/input";
+import {Label} from "@/components/ui/label";
+import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
+import {useAuth, ProfileRole} from "@/contexts/AuthContext";
 import {Loader2} from "lucide-react";
-import {toast} from "@/hooks/use-toast.ts";
+import {toast} from "@/hooks/use-toast";
 import {ApiRequestError} from "@/api/http";
 import {firstMessagePerField} from "@/lib/validationMessages";
 
