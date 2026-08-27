@@ -1,13 +1,22 @@
+import {useMemo, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import {OrderDateRangeFilter} from "@/components/OrderDateRangeFilter";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Button} from "@/components/ui/button";
 import {Package, Calendar, Loader2} from "lucide-react";
 import {useCustomerOrders} from "@/hooks/useOrders";
+import {filterByCreatedAtDateRange, type OrderDateRange} from "@/lib/orderDateRange";
 import {Link} from "react-router-dom";
 
 const ClientePedidos = () => {
     const {data: orders = [], isLoading} = useCustomerOrders();
+    const [dateRange, setDateRange] = useState<OrderDateRange>({from: "", to: ""});
+
+    const filteredOrders = useMemo(
+        () => filterByCreatedAtDateRange(orders, dateRange),
+        [orders, dateRange],
+    );
 
     const getStatusColor = (status: string) => {
         const colors: Record<string, string> = {
@@ -33,24 +42,27 @@ const ClientePedidos = () => {
     return (
         <DashboardLayout userType="cliente">
             <div className="space-y-6">
-                {/* Header */}
-                <div>
-                    <h1 className="text-3xl font-display font-semibold">Meus Pedidos</h1>
-                    <p className="text-muted-foreground mt-1">
-                        Histórico de todos os seus pedidos
-                    </p>
+                <div className="flex flex-wrap items-end justify-between gap-4">
+                    <div>
+                        <h1 className="text-3xl font-display font-semibold">Meus Pedidos</h1>
+                        <p className="text-muted-foreground mt-1">
+                            Histórico de todos os seus pedidos
+                        </p>
+                    </div>
+                    <OrderDateRangeFilter value={dateRange} onChange={setDateRange}/>
                 </div>
 
-                {/* Orders List */}
                 <div className="space-y-4">
-                    {orders.length === 0 && (
+                    {filteredOrders.length === 0 && (
                         <Card>
                             <CardContent className="py-12 text-center text-muted-foreground">
-                                Nenhum pedido encontrado ainda.
+                                {orders.length === 0
+                                    ? "Nenhum pedido encontrado ainda."
+                                    : "Nenhum pedido neste período."}
                             </CardContent>
                         </Card>
                     )}
-                    {orders.map((order) => (
+                    {filteredOrders.map((order) => (
                         <Card key={order.id}>
                             <CardHeader className="pb-2">
                                 <div className="flex flex-wrap items-center justify-between gap-3">

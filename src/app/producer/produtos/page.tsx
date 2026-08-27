@@ -1,3 +1,3 @@
 "use client";
 
-export { default } from "@/pages/producer/Produtos";
+export { default } from "@/views/producer/Produtos";

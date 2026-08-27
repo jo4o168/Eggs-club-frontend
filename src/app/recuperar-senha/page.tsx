@@ -1,3 +1,3 @@
 "use client";
 
-export {default} from "@/pages/auth/RecuperarSenha";
+export {default} from "@/views/auth/RecuperarSenha";
