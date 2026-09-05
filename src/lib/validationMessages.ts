@@ -22,6 +22,11 @@ export const API_FIELD_LABELS: Record<string, string> = {
     image: "Imagem",
     image_url: "Imagem",
     producer_id: "Produtor",
+    frequency: "Frequência",
+    product_id: "Kit de ovos",
+    delivery_address: "Endereço de entrega",
+    payment_method_id: "Pagamento",
+    notes: "Observações",
 };
 
 function firstMessage(value: string | string[] | undefined): string {

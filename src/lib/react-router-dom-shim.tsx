@@ -22,18 +22,20 @@ export function Link({ to, children, className, onClick }: LinkProps) {
 export function useNavigate() {
   const router = useRouter();
 
-  return (to: string, options?: { replace?: boolean }) => {
+  return (to: string | { pathname: string; search?: string }, options?: { replace?: boolean }) => {
+    const href = typeof to === "string" ? to : `${to.pathname}${to.search ?? ""}`;
     if (options?.replace) {
-      router.replace(to);
+      router.replace(href);
       return;
     }
-    router.push(to);
+    router.push(href);
   };
 }
 
 export function useLocation() {
   const pathname = usePathname();
-  return { pathname };
+  const search = typeof window === "undefined" ? "" : window.location.search;
+  return { pathname, search };
 }
 
 export function useParams<T extends Record<string, string>>() {

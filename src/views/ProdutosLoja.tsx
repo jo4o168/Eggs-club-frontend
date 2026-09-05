@@ -26,21 +26,24 @@ const ProdutosLoja = () => {
 
     const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
     const [selectedColors, setSelectedColors] = useState<string[]>([]);
-    const [showSubscription, setShowSubscription] = useState(false);
-    const [showOneTime, setShowOneTime] = useState(false);
     const [selectedProducerId, setSelectedProducerId] = useState<string>("");
 
+    const oneTimeKits = useMemo(
+        () => products.filter((product) => product.allow_one_time_purchase !== false),
+        [products],
+    );
+
     const sizeOptions = useMemo(
-        () => Array.from(new Set(products.map((p) => p.egg_size).filter(Boolean))) as string[],
-        [products]
+        () => Array.from(new Set(oneTimeKits.map((p) => p.egg_size).filter(Boolean))) as string[],
+        [oneTimeKits]
     );
     const colorOptions = useMemo(
-        () => Array.from(new Set(products.map((p) => p.egg_color).filter(Boolean))) as string[],
-        [products]
+        () => Array.from(new Set(oneTimeKits.map((p) => p.egg_color).filter(Boolean))) as string[],
+        [oneTimeKits]
     );
 
     const filteredProducts = useMemo(() => {
-        return products.filter((product) => {
+        return oneTimeKits.filter((product) => {
             const matchesQuery =
                 !query ||
                 product.name.toLowerCase().includes(query) ||
@@ -50,12 +53,10 @@ const ProdutosLoja = () => {
             const matchesSize = selectedSizes.length === 0 || selectedSizes.includes(product.egg_size ?? "");
             const matchesColor = selectedColors.length === 0 || selectedColors.includes(product.egg_color ?? "");
             const matchesProducer = !selectedProducerId || String(product.producer_id) === selectedProducerId;
-            const matchesSubscription = !showSubscription || !!product.allow_subscription;
-            const matchesOneTime = !showOneTime || !!product.allow_one_time_purchase;
 
-            return matchesQuery && matchesSize && matchesColor && matchesProducer && matchesSubscription && matchesOneTime;
+            return matchesQuery && matchesSize && matchesColor && matchesProducer;
         });
-    }, [products, query, selectedSizes, selectedColors, selectedProducerId, showSubscription, showOneTime]);
+    }, [oneTimeKits, query, selectedSizes, selectedColors, selectedProducerId]);
 
     const toggleSelection = (value: string, list: string[], setList: (next: string[]) => void) => {
         if (list.includes(value)) {
@@ -90,10 +91,22 @@ const ProdutosLoja = () => {
         <div className="min-h-screen flex flex-col">
             <Header/>
             <main className="flex-1 py-8">
-                <div className="container">
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-                        <aside className="space-y-4">
-                            <Card>
+                <div className="container space-y-6">
+                    <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+                        <div>
+                            <h1 className="section-title text-foreground">Kits de ovos</h1>
+                            <p className="text-muted-foreground mt-1">
+                                Compra única, sem mensalidade. Prefere receber todo mês?
+                            </p>
+                        </div>
+                        <Link to="/planos">
+                            <Button variant="outline">Ver planos de assinatura</Button>
+                        </Link>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
+                        <aside className="lg:col-span-1">
+                            <Card className="h-full min-h-[22rem]">
                                 <CardContent className="p-4 space-y-4">
                                     <h3 className="font-semibold">Filtros</h3>
                                     <div className="space-y-2">
@@ -113,7 +126,9 @@ const ProdutosLoja = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Tamanho do ovo</Label>
-                                        {sizeOptions.map((size) => (
+                                        {sizeOptions.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">Nenhuma opção no momento.</p>
+                                        ) : sizeOptions.map((size) => (
                                             <label key={size} className="flex items-center gap-2 text-sm">
                                                 <Checkbox checked={selectedSizes.includes(size)} onCheckedChange={() => toggleSelection(size, selectedSizes, setSelectedSizes)}/>
                                                 {size}
@@ -122,23 +137,14 @@ const ProdutosLoja = () => {
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Cor</Label>
-                                        {colorOptions.map((color) => (
+                                        {colorOptions.length === 0 ? (
+                                            <p className="text-sm text-muted-foreground">Nenhuma opção no momento.</p>
+                                        ) : colorOptions.map((color) => (
                                             <label key={color} className="flex items-center gap-2 text-sm">
                                                 <Checkbox checked={selectedColors.includes(color)} onCheckedChange={() => toggleSelection(color, selectedColors, setSelectedColors)}/>
                                                 {color}
                                             </label>
                                         ))}
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Modalidade</Label>
-                                        <label className="flex items-center gap-2 text-sm">
-                                            <Checkbox checked={showSubscription} onCheckedChange={(v) => setShowSubscription(Boolean(v))}/>
-                                            Com assinatura
-                                        </label>
-                                        <label className="flex items-center gap-2 text-sm">
-                                            <Checkbox checked={showOneTime} onCheckedChange={(v) => setShowOneTime(Boolean(v))}/>
-                                            Compra única
-                                        </label>
                                     </div>
                                 </CardContent>
                             </Card>
@@ -146,50 +152,42 @@ const ProdutosLoja = () => {
 
                         <section className="lg:col-span-3">
                             {filteredProducts.length === 0 ? (
-                                <Card>
-                                    <CardContent className="p-10 text-center text-muted-foreground">
-                                        Nenhum kit encontrado com os filtros selecionados.
+                                <Card className="h-full min-h-[22rem]">
+                                    <CardContent className="p-10 h-full min-h-[22rem] flex flex-col items-center justify-center text-center space-y-3">
+                                        <p className="text-muted-foreground">
+                                            Nenhum kit de ovos encontrado com os filtros selecionados.
+                                        </p>
+                                        <Link to="/planos">
+                                            <Button variant="outline" size="sm">Ver planos de assinatura</Button>
+                                        </Link>
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
                                     {filteredProducts.map((product) => (
                                         <Card
                                             id={`product-${product.id}`}
                                             key={product.id}
-                                            className={`overflow-hidden transition-all ${
-                                                String(product.id) === targetProductId ? "ring-2 ring-primary shadow-lg" : ""
+                                            className={`h-full flex flex-col overflow-hidden transition-all border-2 ${
+                                                String(product.id) === targetProductId ? "ring-2 ring-primary shadow-lg border-primary" : "border-border"
                                             }`}
                                         >
-                                            <div className="h-40 bg-secondary flex items-center justify-center">
+                                            <div className="aspect-video bg-secondary shrink-0 flex items-center justify-center">
                                                 {product.image_url ? (
                                                     <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"/>
                                                 ) : (
                                                     <div className="text-sm text-muted-foreground">Sem imagem</div>
                                                 )}
                                             </div>
-                                            <CardContent className="p-4 space-y-2">
-                                                <h3 className="font-semibold">{product.name}</h3>
-                                                <p className="text-xs text-muted-foreground">
+                                            <CardContent className="p-4 flex-1 flex flex-col gap-2">
+                                                <h3 className="font-semibold line-clamp-2 min-h-[2.5rem]">{product.name}</h3>
+                                                <p className="text-xs text-muted-foreground line-clamp-1">
                                                     {product.egg_size} • {product.egg_color} • Kit com {product.kit_quantity ?? 0}
                                                 </p>
-                                                <div className="text-sm">
-                                                    {product.allow_one_time_purchase && (
-                                                        <p>Compra única: R$ {Number(product.one_time_price ?? 0).toFixed(2)}</p>
-                                                    )}
-                                                    {product.allow_subscription &&
-                                                        product.subscription_price != null &&
-                                                        Number(product.subscription_price) > 0 && (
-                                                            <p>Assinatura (referência do kit): R$ {Number(product.subscription_price).toFixed(2)}</p>
-                                                        )}
-                                                    {product.allow_subscription &&
-                                                        (product.subscription_price == null ||
-                                                            Number(product.subscription_price) <= 0) && (
-                                                            <p className="text-amber-700 dark:text-amber-400 text-xs">
-                                                                Assinatura ativa no kit, mas sem preço de referência cadastrado.
-                                                            </p>
-                                                        )}
-                                                </div>
+                                                <p className="text-sm font-medium">
+                                                    R$ {Number(product.one_time_price ?? 0).toFixed(2)}
+                                                </p>
+                                                <div className="mt-auto pt-2">
                                                 {isCustomer ? (
                                                     <div className="grid grid-cols-[1fr_auto] gap-2">
                                                         <Link to={`/produtos/${product.id}`}>
@@ -217,6 +215,7 @@ const ProdutosLoja = () => {
                                                         <Button size="sm" className="w-full">Cadastrar-se para comprar</Button>
                                                     </Link>
                                                 )}
+                                                </div>
                                             </CardContent>
                                         </Card>
                                     ))}

@@ -18,6 +18,8 @@ interface BrazilLocationFieldsProps {
     onZipCodeChange: (masked: string) => void;
     address: string;
     onAddressChange: (value: string) => void;
+    addressNumber?: string;
+    onAddressNumberChange?: (value: string) => void;
     complement?: string;
     onComplementChange?: (value: string) => void;
     stateUf: string;
@@ -35,6 +37,8 @@ const BrazilLocationFields = ({
     onZipCodeChange,
     address,
     onAddressChange,
+    addressNumber = "",
+    onAddressNumberChange,
     complement = "",
     onComplementChange = () => {},
     stateUf,
@@ -115,14 +119,29 @@ const BrazilLocationFields = ({
                 </div>
             )}
 
-            <div className="space-y-2">
-                <Label htmlFor="brazil-address">Endereço (logradouro)</Label>
-                <Input
-                    id="brazil-address"
-                    value={address}
-                    onChange={(e) => onAddressChange(e.target.value)}
-                    placeholder="Rua, número, referência..."
-                />
+            <div className="grid md:grid-cols-3 gap-4">
+                <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="brazil-address">Endereço (logradouro)</Label>
+                    <Input
+                        id="brazil-address"
+                        value={address}
+                        onChange={(e) => onAddressChange(e.target.value)}
+                        placeholder="Rua, avenida, travessa..."
+                    />
+                </div>
+                {onAddressNumberChange ? (
+                    <div className="space-y-2">
+                        <Label htmlFor="brazil-address-number">Número</Label>
+                        <Input
+                            id="brazil-address-number"
+                            value={addressNumber}
+                            onChange={(e) => onAddressNumberChange(e.target.value)}
+                            placeholder="123"
+                            autoComplete="address-line2"
+                        />
+                        <p className="text-xs text-muted-foreground">Sem número? Use S/N.</p>
+                    </div>
+                ) : null}
             </div>
 
             {showComplement ? (

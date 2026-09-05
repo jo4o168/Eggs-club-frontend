@@ -46,10 +46,7 @@ const ProdutorProdutos = () => {
         eggSize: "",
         eggColor: "",
         kitQuantity: "",
-        subscriptionPrice: "",
         oneTimePrice: "",
-        allowSubscription: true,
-        allowOneTimePurchase: true,
         description: "",
         imageFile: null as File | null,
         imagePreview: "",
@@ -88,10 +85,7 @@ const ProdutorProdutos = () => {
                 eggSize: product.egg_size ?? "",
                 eggColor: product.egg_color ?? "",
                 kitQuantity: String(product.kit_quantity ?? ""),
-                subscriptionPrice: product.subscription_price?.toString() ?? "",
                 oneTimePrice: product.one_time_price?.toString() ?? "",
-                allowSubscription: product.allow_subscription ?? true,
-                allowOneTimePurchase: product.allow_one_time_purchase ?? true,
                 description: product.description ?? "",
                 imageFile: null,
                 imagePreview: product.image_url ?? "",
@@ -103,10 +97,7 @@ const ProdutorProdutos = () => {
                 eggSize: "",
                 eggColor: "",
                 kitQuantity: "",
-                subscriptionPrice: "",
                 oneTimePrice: "",
-                allowSubscription: true,
-                allowOneTimePurchase: true,
                 description: "",
                 imageFile: null,
                 imagePreview: "",
@@ -115,21 +106,17 @@ const ProdutorProdutos = () => {
         setDialogOpen(true);
     };
 
+    const isSubscriptionOnly = Boolean(
+        editingProduct && !editingProduct.allow_one_time_purchase && editingProduct.allow_subscription,
+    );
+
     const handleSave = async () => {
         if (!formData.name || !formData.eggSize || !formData.eggColor || !formData.kitQuantity) {
             toast({title: "Preencha os campos obrigatórios", variant: "destructive"});
             return;
         }
-        if (!formData.allowSubscription && !formData.allowOneTimePurchase) {
-            toast({title: "Selecione ao menos uma modalidade de venda", variant: "destructive"});
-            return;
-        }
-        if (formData.allowSubscription && !formData.subscriptionPrice) {
-            toast({title: "Informe o preço para assinatura", variant: "destructive"});
-            return;
-        }
-        if (formData.allowOneTimePurchase && !formData.oneTimePrice) {
-            toast({title: "Informe o preço para compra única", variant: "destructive"});
+        if (!isSubscriptionOnly && !formData.oneTimePrice) {
+            toast({title: "Informe o preço da compra única", variant: "destructive"});
             return;
         }
 
@@ -138,11 +125,8 @@ const ProdutorProdutos = () => {
             egg_size: formData.eggSize,
             egg_color: formData.eggColor,
             kit_quantity: Number(formData.kitQuantity),
-            subscription_price: formData.subscriptionPrice ? Number(formData.subscriptionPrice) : null,
             one_time_price: formData.oneTimePrice ? Number(formData.oneTimePrice) : null,
-            allow_subscription: formData.allowSubscription,
-            allow_one_time_purchase: formData.allowOneTimePurchase,
-            price: Number(formData.oneTimePrice || formData.subscriptionPrice || 0),
+            price: Number(formData.oneTimePrice || 0),
             description: formData.description || null,
             image_file: formData.imageFile,
         };
@@ -184,13 +168,13 @@ const ProdutorProdutos = () => {
     return (
         <DashboardLayout userType="produtor">
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                     <div>
                         <h1 className="text-3xl font-display font-semibold">
                             Meus Kit's de Ovos
                         </h1>
                         <p className="text-muted-foreground mt-1">
-                            Gerencie os kits de ovos que você vende
+                            Cadastre os kits para venda avulsa. Assinatura é montada em Planos.
                         </p>
                     </div>
                     <Dialog
@@ -284,62 +268,9 @@ const ProdutorProdutos = () => {
                                     />
                                     <FieldError msg={dialogFieldErrors.kitQuantity}/>
                                 </div>
-                                <div className="space-y-3">
-                                    <Label>Modalidade de venda</Label>
-                                    <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                                        <div>
-                                            <p className="font-medium text-sm">Assinatura</p>
-                                            <p className="text-xs text-muted-foreground">Recorrente</p>
-                                        </div>
-                                        <Switch
-                                            checked={formData.allowSubscription}
-                                            onCheckedChange={(checked) => {
-                                                setFormData({...formData, allowSubscription: checked});
-                                                clearDialogFieldError("allowSubscription");
-                                            }}
-                                        />
-                                    </div>
-                                    <div className="flex items-center justify-between p-3 rounded-lg border border-border">
-                                        <div>
-                                            <p className="font-medium text-sm">Compra única</p>
-                                            <p className="text-xs text-muted-foreground">Kit avulso</p>
-                                        </div>
-                                        <Switch
-                                            checked={formData.allowOneTimePurchase}
-                                            onCheckedChange={(checked) => {
-                                                setFormData({...formData, allowOneTimePurchase: checked});
-                                                clearDialogFieldError("allowOneTimePurchase");
-                                            }}
-                                        />
-                                    </div>
-                                    {(dialogFieldErrors.allowSubscription || dialogFieldErrors.allowOneTimePurchase) && (
-                                        <FieldError
-                                            msg={
-                                                dialogFieldErrors.allowSubscription ??
-                                                dialogFieldErrors.allowOneTimePurchase
-                                            }
-                                        />
-                                    )}
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
+                                {!isSubscriptionOnly ? (
                                     <div className="space-y-2">
-                                        <Label htmlFor="subscriptionPrice">Preço na assinatura (R$)</Label>
-                                        <Input
-                                            id="subscriptionPrice"
-                                            type="number"
-                                            step="0.01"
-                                            value={formData.subscriptionPrice}
-                                            onChange={(e) => {
-                                                setFormData({...formData, subscriptionPrice: e.target.value});
-                                                clearDialogFieldError("subscriptionPrice");
-                                            }}
-                                            placeholder="0.00"
-                                            disabled={!formData.allowSubscription}
-                                        />
-                                        <FieldError msg={dialogFieldErrors.subscriptionPrice}/>
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="oneTimePrice">Preço na compra única (R$)</Label>
+                                        <Label htmlFor="oneTimePrice">Preço da compra única (R$)</Label>
                                         <Input
                                             id="oneTimePrice"
                                             type="number"
@@ -350,11 +281,14 @@ const ProdutorProdutos = () => {
                                                 clearDialogFieldError("oneTimePrice");
                                             }}
                                             placeholder="0.00"
-                                            disabled={!formData.allowOneTimePurchase}
                                         />
                                         <FieldError msg={dialogFieldErrors.oneTimePrice}/>
                                     </div>
-                                </div>
+                                ) : (
+                                    <p className="text-xs text-muted-foreground">
+                                        Este kit existe só para assinatura. Preço e frequência ficam no plano.
+                                    </p>
+                                )}
                                 <FieldError msg={dialogFieldErrors.price}/>
                                 <div className="space-y-2">
                                     <Label htmlFor="description">Descrição</Label>
@@ -422,9 +356,24 @@ const ProdutorProdutos = () => {
                     </Dialog>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {products.length === 0 ? (
+                    <Card>
+                        <CardContent className="py-12 text-center">
+                            <Package className="w-16 h-16 mx-auto text-muted-foreground/50 mb-4"/>
+                            <h3 className="text-lg font-semibold mb-2">Nenhum kit cadastrado</h3>
+                            <p className="text-muted-foreground mb-4">
+                                Cadastre um kit com tamanho, cor e preço da compra única.
+                            </p>
+                            <Button variant="hero" onClick={() => handleOpenDialog()}>
+                                <Plus className="w-4 h-4 mr-2"/>
+                                Criar Primeiro Kit
+                            </Button>
+                        </CardContent>
+                    </Card>
+                ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
                     {products.map((product) => (
-                        <Card key={product.id} className="overflow-hidden">
+                        <Card key={product.id} className="h-full flex flex-col overflow-hidden">
                             <div className={`aspect-video bg-secondary relative ${!product.is_active ? "opacity-60" : ""}`}>
                                 {product.image_url ? (
                                     <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"/>
@@ -438,9 +387,9 @@ const ProdutorProdutos = () => {
                                 </span>
                             </div>
                             <CardHeader className={`pb-2 ${!product.is_active ? "opacity-60" : ""}`}>
-                                <CardTitle className="text-lg">{product.name}</CardTitle>
+                                <CardTitle className="text-lg line-clamp-2 min-h-[3.5rem]">{product.name}</CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="flex-1 flex flex-col">
                                 <div className={!product.is_active ? "opacity-60" : ""}>
                                     <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{product.description}</p>
                                     <div className="text-sm text-muted-foreground mb-3 space-y-1">
@@ -451,15 +400,15 @@ const ProdutorProdutos = () => {
                                         <span className="text-sm text-muted-foreground">Kit com {product.kit_quantity ?? 0} ovos</span>
                                     </div>
                                     <div className="text-xs text-muted-foreground mb-3 space-y-1">
-                                        {product.allow_subscription && product.subscription_price != null && (
-                                            <p>Assinatura: R$ {toMoney(product.subscription_price)}</p>
-                                        )}
                                         {product.allow_one_time_purchase && product.one_time_price != null && (
                                             <p>Compra única: R$ {toMoney(product.one_time_price)}</p>
                                         )}
+                                        {!product.allow_one_time_purchase && product.allow_subscription && (
+                                            <p>Somente assinatura</p>
+                                        )}
                                     </div>
                                 </div>
-                                <div className="flex gap-2">
+                                <div className="flex gap-2 mt-auto">
                                     <Button variant="outline" size="sm" className="flex-1" onClick={() => handleOpenDialog(product)}>
                                         <Pencil className="w-4 h-4 mr-1"/>
                                         Editar
@@ -497,6 +446,7 @@ const ProdutorProdutos = () => {
                         </Card>
                     ))}
                 </div>
+                )}
             </div>
         </DashboardLayout>
     );

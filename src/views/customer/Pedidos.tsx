@@ -10,7 +10,7 @@ import {filterByCreatedAtDateRange, type OrderDateRange} from "@/lib/orderDateRa
 import {Link} from "react-router-dom";
 
 const ClientePedidos = () => {
-    const {data: orders = [], isLoading} = useCustomerOrders();
+    const {data: orders = [], isLoading, isError, error, refetch} = useCustomerOrders();
     const [dateRange, setDateRange] = useState<OrderDateRange>({from: "", to: ""});
 
     const filteredOrders = useMemo(
@@ -35,6 +35,21 @@ const ClientePedidos = () => {
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground"/>
                 </div>
+            </DashboardLayout>
+        );
+    }
+
+    if (isError) {
+        return (
+            <DashboardLayout userType="cliente">
+                <Card>
+                    <CardContent className="py-10 text-center space-y-3">
+                        <p className="text-muted-foreground">
+                            {error instanceof Error ? error.message : "Não foi possível carregar os pedidos."}
+                        </p>
+                        <Button variant="outline" onClick={() => void refetch()}>Tentar novamente</Button>
+                    </CardContent>
+                </Card>
             </DashboardLayout>
         );
     }
@@ -88,10 +103,21 @@ const ClientePedidos = () => {
                                 <div className="flex items-center justify-between p-4 bg-secondary/30 rounded-lg">
                                     <div className="flex items-center gap-2">
                                         <Package className="w-4 h-4 text-primary"/>
-                                        <span>Pedido realizado</span>
+                                        <span>
+                                            {order.items && order.items.length > 0
+                                                ? order.items.map((item) => `${item.quantity}× ${item.product_name}`).join(", ")
+                                                : "Pedido realizado"}
+                                        </span>
                                     </div>
                                     <span className="font-semibold text-primary">R$ {Number(order.total_amount).toFixed(2)}</span>
                                 </div>
+                                {order.producer_message ? (
+                                    <p className="mt-3 text-sm text-muted-foreground">
+                                        {order.status === "cancelled"
+                                            ? `Cancelado: ${order.producer_message} O valor será estornado.`
+                                            : order.producer_message}
+                                    </p>
+                                ) : null}
                             </CardContent>
                         </Card>
                     ))}

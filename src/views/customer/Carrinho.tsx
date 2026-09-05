@@ -1,38 +1,36 @@
 import {useEffect, useMemo, useState} from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
+import CheckoutStepper from "@/components/checkout/CheckoutStepper";
+import CartLineItem from "@/components/checkout/CartLineItem";
+import OrderSummaryCard from "@/components/checkout/OrderSummaryCard";
 import {Button} from "@/components/ui/button";
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
-import {Input} from "@/components/ui/input";
-import {Textarea} from "@/components/ui/textarea";
-import {Badge} from "@/components/ui/badge";
-import {ChevronLeft, ChevronRight, Trash2} from "lucide-react";
 import {usePublicPlans} from "@/hooks/usePublicCatalog";
-import {useCheckoutCart, useCustomerCart, useRemoveCartItem, useUpdateCartItem} from "@/hooks/useCart";
-import {usePaymentMethods} from "@/hooks/usePayments";
-import {useNavigate} from "react-router-dom";
-import {toast} from "@/hooks/use-toast";
-import {Label} from "@/components/ui/label";
+import {useCustomerCart, useRemoveCartItem, useUpdateCartItem} from "@/hooks/useCart";
+import {Link, useNavigate} from "react-router-dom";
+import {Loader2, ShoppingBag} from "lucide-react";
+import {useAuth} from "@/contexts/AuthContext";
 
 const CarrinhoCliente = () => {
     const navigate = useNavigate();
-    const {data: items = [], isLoading} = useCustomerCart();
+    const {user, loading: authLoading, isClient} = useAuth();
+    const {data: items = [], isLoading, isError, refetch} = useCustomerCart();
     const {data: allPlans = []} = usePublicPlans(undefined);
     const updateItem = useUpdateCartItem();
     const removeItem = useRemoveCartItem();
-    const checkout = useCheckoutCart();
-    const {data: paymentMethods = []} = usePaymentMethods();
     const [quantityDraft, setQuantityDraft] = useState<Record<number, string>>({});
-    const [checkoutPaymentMethodId, setCheckoutPaymentMethodId] = useState<number | null>(null);
-    const [deliveryAddress, setDeliveryAddress] = useState("");
-    const [orderNotes, setOrderNotes] = useState("");
 
     const cartRows = useMemo(
         () =>
             items.map((item) => ({
                 item,
-                plans: allPlans.filter((p) => p.producer_id === item.product?.producer_id && p.is_active !== false),
+                plans: allPlans.filter((plan) => {
+                    if (plan.is_active === false) return false;
+                    if (item.product?.id && plan.product_id) {
+                        return plan.product_id === item.product.id;
+                    }
+                    return plan.producer_id === item.product?.producer_id;
+                }),
             })),
         [items, allPlans],
     );
@@ -45,21 +43,6 @@ const CarrinhoCliente = () => {
         setQuantityDraft(nextDraft);
     }, [items]);
 
-    const hasSubscriptionItems = useMemo(
-        () => items.some((item) => item.purchase_mode === "subscription"),
-        [items],
-    );
-
-    useEffect(() => {
-        if (paymentMethods.length === 0) {
-            setCheckoutPaymentMethodId(null);
-            return;
-        }
-        const preferred =
-            paymentMethods.find((p) => p.is_default)?.id ?? paymentMethods[0]?.id ?? null;
-        setCheckoutPaymentMethodId(preferred);
-    }, [paymentMethods]);
-
     const handleChangeMode = (id: number, mode: "one_time" | "subscription") => {
         void updateItem.mutateAsync({
             id,
@@ -68,16 +51,8 @@ const CarrinhoCliente = () => {
         });
     };
 
-    const handleChangePlan = (id: number, planId: number) => {
-        void updateItem.mutateAsync({id, subscription_plan_id: planId});
-    };
-
     const handleChangeQuantity = (id: number, quantity: number) => {
         void updateItem.mutateAsync({id, quantity: Math.max(1, quantity || 1)});
-    };
-
-    const handleQuantityInput = (id: number, value: string) => {
-        setQuantityDraft((prev) => ({...prev, [id]: value.replace(/[^\d]/g, "")}));
     };
 
     const commitQuantity = (id: number) => {
@@ -86,245 +61,111 @@ const CarrinhoCliente = () => {
         handleChangeQuantity(id, parsed);
     };
 
-    const decreaseQuantity = (id: number) => {
+    const shiftQuantity = (id: number, delta: number) => {
         const current = Number(quantityDraft[id]);
-        const next = Number.isFinite(current) ? Math.max(1, current - 1) : 1;
+        const next = Number.isFinite(current) ? Math.max(1, current + delta) : 1;
         setQuantityDraft((prev) => ({...prev, [id]: String(next)}));
         handleChangeQuantity(id, next);
     };
 
-    const increaseQuantity = (id: number) => {
-        const current = Number(quantityDraft[id]);
-        const next = Number.isFinite(current) ? Math.max(1, current + 1) : 1;
-        setQuantityDraft((prev) => ({...prev, [id]: String(next)}));
-        handleChangeQuantity(id, next);
-    };
+    const missingSubscriptionPlan = cartRows.some(
+        (row) => row.item.purchase_mode === "subscription" && !row.item.subscription_plan_id,
+    );
+    const pending = updateItem.isPending || removeItem.isPending;
+    const canContinue = cartRows.length > 0 && !missingSubscriptionPlan && !pending;
 
-    const handleRemove = (id: number) => {
-        void removeItem.mutateAsync(id);
-    };
-
-    const handleCheckout = async () => {
-        for (const row of cartRows) {
-            if (row.item.purchase_mode === "subscription" && !row.item.subscription_plan_id) {
-                toast({title: "Selecione um plano para itens de assinatura.", variant: "destructive"});
-                return;
-            }
-        }
-        if (hasSubscriptionItems) {
-            if (paymentMethods.length === 0) {
-                toast({
-                    title: "Método de pagamento necessário",
-                    description: "Cadastre um cartão ou Pix em Configurações antes de assinar.",
-                    variant: "destructive",
-                });
-                return;
-            }
-            if (!checkoutPaymentMethodId) {
-                toast({title: "Selecione o método de pagamento para a assinatura.", variant: "destructive"});
-                return;
-            }
-        }
-        const body: {
-            payment_method_id?: number;
-            delivery_address?: string | null;
-            notes?: string | null;
-        } = {};
-        if (hasSubscriptionItems && checkoutPaymentMethodId) {
-            body.payment_method_id = checkoutPaymentMethodId;
-        }
-        const addr = deliveryAddress.trim();
-        const notes = orderNotes.trim();
-        if (addr) body.delivery_address = addr;
-        if (notes) body.notes = notes;
-        await checkout.mutateAsync(body);
-        navigate("/customer/pedidos");
-    };
-
-    const checkoutDisabled =
-        checkout.isPending ||
-        updateItem.isPending ||
-        removeItem.isPending ||
-        cartRows.some((r) => r.item.purchase_mode === "subscription" && !r.item.subscription_plan_id) ||
-        (hasSubscriptionItems && paymentMethods.length === 0);
+    if (!authLoading && (!user || !isClient())) {
+        return (
+            <div className="min-h-screen flex flex-col">
+                <Header/>
+                <main className="flex-1 container py-16 text-center space-y-4">
+                    <h1 className="text-3xl font-display font-semibold">Entre para ver o carrinho</h1>
+                    <p className="text-muted-foreground">O carrinho fica salvo na sua conta de cliente.</p>
+                    <Button onClick={() => navigate("/login")}>Entrar</Button>
+                </main>
+                <Footer/>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen flex flex-col">
             <Header/>
             <main className="flex-1 py-8">
-                <div className="container max-w-4xl space-y-6">
-                    <div className="flex items-center justify-between">
-                        <h1 className="text-3xl font-display font-semibold">Carrinho</h1>
-                        <Button variant="outline" onClick={() => navigate("/produtos")}>Voltar para loja</Button>
+                <div className="container max-w-6xl space-y-8">
+                    <div className="space-y-4">
+                        <CheckoutStepper current="cart"/>
+                        <div className="flex flex-wrap items-end justify-between gap-3">
+                            <div>
+                                <h1 className="text-3xl font-display font-semibold">Seu carrinho</h1>
+                                <p className="text-muted-foreground mt-1">
+                                    Revise os kits e as quantidades antes de informar a entrega.
+                                </p>
+                            </div>
+                            <Button variant="outline" asChild>
+                                <Link to="/produtos">Continuar comprando</Link>
+                            </Button>
+                        </div>
                     </div>
 
                     {isLoading ? (
-                        <Card>
-                            <CardContent className="p-10 text-center text-muted-foreground">Carregando carrinho…</CardContent>
-                        </Card>
+                        <div className="flex justify-center py-16">
+                            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground"/>
+                        </div>
+                    ) : isError ? (
+                        <div className="rounded-2xl border border-border bg-card p-10 text-center space-y-3">
+                            <p className="text-muted-foreground">Não foi possível carregar o carrinho.</p>
+                            <Button variant="outline" onClick={() => void refetch()}>Tentar novamente</Button>
+                        </div>
                     ) : cartRows.length === 0 ? (
-                        <Card>
-                            <CardContent className="p-10 text-center text-muted-foreground">
-                                Carrinho vazio.
-                            </CardContent>
-                        </Card>
-                    ) : (
-                        <>
-                            {cartRows.map(({item, plans}) => (
-                                <Card key={item.id}>
-                                    <CardHeader>
-                                        <div className="flex items-center justify-between gap-2">
-                                            <div>
-                                                <CardTitle>{item.product?.name ?? "Produto"}</CardTitle>
-                                                <p className="text-sm text-muted-foreground mt-1">
-                                                    R$ {Number(item.line_total ?? 0).toFixed(2)}
-                                                </p>
-                                            </div>
-                                            <Button variant="ghost" size="sm" onClick={() => handleRemove(item.id)}>
-                                                <Trash2 className="w-4 h-4 text-destructive"/>
-                                            </Button>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-3">
-                                        <div className="flex items-center gap-2">
-                                            <Badge variant="secondary">
-                                                {item.purchase_mode === "subscription" ? "Assinatura" : "Compra única"}
-                                            </Badge>
-                                        </div>
-                                        <div className="grid md:grid-cols-3 gap-3">
-                                            <Select
-                                                value={item.purchase_mode}
-                                                onValueChange={(v: "one_time" | "subscription") => handleChangeMode(item.id, v)}
-                                                disabled={updateItem.isPending}
-                                            >
-                                                <SelectTrigger><SelectValue/></SelectTrigger>
-                                                <SelectContent>
-                                                    {item.product?.allow_one_time_purchase && (
-                                                        <SelectItem value="one_time">Compra única</SelectItem>
-                                                    )}
-                                                    {item.product?.allow_subscription && (
-                                                        <SelectItem value="subscription">Assinatura</SelectItem>
-                                                    )}
-                                                </SelectContent>
-                                            </Select>
-
-                                            {item.purchase_mode === "subscription" ? (
-                                                <Select
-                                                    value={item.subscription_plan_id ? String(item.subscription_plan_id) : ""}
-                                                    onValueChange={(v) => handleChangePlan(item.id, Number(v))}
-                                                    disabled={updateItem.isPending}
-                                                >
-                                                    <SelectTrigger><SelectValue placeholder="Plano"/></SelectTrigger>
-                                                    <SelectContent>
-                                                        {plans.map((plan) => (
-                                                            <SelectItem key={plan.id} value={String(plan.id)}>
-                                                                {plan.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            ) : (
-                                                <div className="flex items-center gap-2">
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => decreaseQuantity(item.id)}
-                                                        disabled={updateItem.isPending}
-                                                    >
-                                                        <ChevronLeft className="w-4 h-4"/>
-                                                    </Button>
-                                                    <Input
-                                                        type="text"
-                                                        inputMode="numeric"
-                                                        value={quantityDraft[item.id] ?? String(item.quantity)}
-                                                        onChange={(e) => handleQuantityInput(item.id, e.target.value)}
-                                                        onBlur={() => commitQuantity(item.id)}
-                                                        className="text-center"
-                                                        disabled={updateItem.isPending}
-                                                    />
-                                                    <Button
-                                                        type="button"
-                                                        variant="outline"
-                                                        size="icon"
-                                                        onClick={() => increaseQuantity(item.id)}
-                                                        disabled={updateItem.isPending}
-                                                    >
-                                                        <ChevronRight className="w-4 h-4"/>
-                                                    </Button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Entrega e observações</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="delivery-address">Endereço de entrega</Label>
-                                        <Textarea
-                                            id="delivery-address"
-                                            placeholder="Rua, número, bairro, cidade…"
-                                            value={deliveryAddress}
-                                            onChange={(e) => setDeliveryAddress(e.target.value)}
-                                            rows={3}
-                                        />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="order-notes">Observações para o produtor</Label>
-                                        <Textarea
-                                            id="order-notes"
-                                            placeholder="Opcional"
-                                            value={orderNotes}
-                                            onChange={(e) => setOrderNotes(e.target.value)}
-                                            rows={2}
-                                        />
-                                    </div>
-                                </CardContent>
-                            </Card>
-
-                            {hasSubscriptionItems && paymentMethods.length > 0 ? (
-                                <Card>
-                                    <CardHeader>
-                                        <CardTitle className="text-lg">Pagamento da assinatura</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="space-y-2">
-                                        <Label htmlFor="checkout-pm">Método</Label>
-                                        <Select
-                                            value={checkoutPaymentMethodId ? String(checkoutPaymentMethodId) : ""}
-                                            onValueChange={(v) => setCheckoutPaymentMethodId(Number(v))}
-                                        >
-                                            <SelectTrigger id="checkout-pm">
-                                                <SelectValue placeholder="Selecione"/>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {paymentMethods.map((pm) => (
-                                                    <SelectItem key={pm.id} value={String(pm.id)}>
-                                                        {pm.type}
-                                                        {pm.last_four ? ` ·••• ${pm.last_four}` : ""}
-                                                        {pm.is_default ? " (padrão)" : ""}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </CardContent>
-                                </Card>
-                            ) : null}
-
-                            {hasSubscriptionItems && paymentMethods.length === 0 ? (
-                                <p className="text-sm text-destructive">
-                                    Cadastre um método de pagamento em Configurações para finalizar assinaturas.
-                                </p>
-                            ) : null}
-
-                            <Button className="w-full" onClick={() => void handleCheckout()} disabled={checkoutDisabled}>
-                                Finalizar compra
+                        <div className="rounded-2xl border border-dashed border-border bg-card px-6 py-16 text-center space-y-4">
+                            <ShoppingBag className="h-12 w-12 mx-auto text-primary/70"/>
+                            <h2 className="text-2xl font-display font-semibold">Seu carrinho está vazio</h2>
+                            <p className="text-muted-foreground max-w-md mx-auto">
+                                Escolha um kit de ovos na loja para montar o pedido e enviar ao produtor.
+                            </p>
+                            <Button variant="hero" asChild>
+                                <Link to="/produtos">Ver kits de ovos</Link>
                             </Button>
-                        </>
+                        </div>
+                    ) : (
+                        <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
+                            <div className="rounded-2xl border border-border bg-card divide-y divide-border overflow-hidden">
+                                {cartRows.map(({item, plans}) => (
+                                    <CartLineItem
+                                        key={item.id}
+                                        item={item}
+                                        plans={plans}
+                                        quantityDraft={quantityDraft[item.id] ?? String(item.quantity)}
+                                        pending={pending}
+                                        onChangeMode={(mode) => handleChangeMode(item.id, mode)}
+                                        onChangePlan={(planId) => void updateItem.mutateAsync({id: item.id, subscription_plan_id: planId})}
+                                        onQuantityInput={(value) =>
+                                            setQuantityDraft((prev) => ({...prev, [item.id]: value.replace(/[^\d]/g, "")}))
+                                        }
+                                        onCommitQuantity={() => commitQuantity(item.id)}
+                                        onDecrease={() => shiftQuantity(item.id, -1)}
+                                        onIncrease={() => shiftQuantity(item.id, 1)}
+                                        onRemove={() => void removeItem.mutateAsync(item.id)}
+                                    />
+                                ))}
+                            </div>
+
+                            <div className="lg:sticky lg:top-24 space-y-3">
+                                <OrderSummaryCard
+                                    items={items}
+                                    ctaLabel="Ir para entrega e pagamento"
+                                    onCta={() => navigate("/customer/checkout")}
+                                    ctaDisabled={!canContinue}
+                                    footnote="A entrega é combinada com o produtor após a confirmação do pedido."
+                                />
+                                {missingSubscriptionPlan ? (
+                                    <p className="text-sm text-destructive text-center">
+                                        Selecione o plano de cada assinatura para continuar.
+                                    </p>
+                                ) : null}
+                            </div>
+                        </div>
                     )}
                 </div>
             </main>

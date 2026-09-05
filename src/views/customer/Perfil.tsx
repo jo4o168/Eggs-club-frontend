@@ -8,6 +8,7 @@ import {Camera, MapPin, Phone, Mail} from "lucide-react";
 import {useProfile, useUpdateProfile, useUpdateProfileAvatar} from "@/hooks/useProfiles";
 import {maskCep, maskCpf, maskPhone, onlyDigits} from "@/utils/inputMasks";
 import {normalizeUfToSigla} from "@/utils/brazilStates";
+import {splitStreetAndNumber} from "@/utils/deliveryAddress";
 import BrazilLocationFields from "@/components/BrazilLocationFields";
 
 const ClientePerfil = () => {
@@ -21,6 +22,7 @@ const ClientePerfil = () => {
         phone: "",
         cpf: "",
         address: "",
+        addressNumber: "",
         city: "",
         state: "",
         zipCode: "",
@@ -35,7 +37,11 @@ const ClientePerfil = () => {
             email: remoteProfile.email ?? "",
             phone: maskPhone(remoteProfile.phone ?? ""),
             cpf: maskCpf(remoteProfile.cpf ?? ""),
-            address: remoteProfile.address ?? "",
+            address: remoteProfile.address_number
+                ? (remoteProfile.address ?? "")
+                : splitStreetAndNumber(remoteProfile.address ?? "").street,
+            addressNumber: remoteProfile.address_number
+                ?? splitStreetAndNumber(remoteProfile.address ?? "").number,
             city: remoteProfile.city ?? "",
             state: normalizeUfToSigla(remoteProfile.state ?? ""),
             zipCode: maskCep(remoteProfile.zip_code ?? ""),
@@ -50,6 +56,7 @@ const ClientePerfil = () => {
             phone: onlyDigits(profile.phone) || null,
             cpf: onlyDigits(profile.cpf) || null,
             address: profile.address || null,
+            address_number: profile.addressNumber.trim() || null,
             city: profile.city || null,
             state: profile.state ? profile.state.toUpperCase() : null,
             zip_code: onlyDigits(profile.zipCode) || null,
@@ -201,6 +208,8 @@ const ClientePerfil = () => {
                             onZipCodeChange={(masked) => setProfile((p) => ({...p, zipCode: masked}))}
                             address={profile.address}
                             onAddressChange={(value) => setProfile((p) => ({...p, address: value}))}
+                            addressNumber={profile.addressNumber}
+                            onAddressNumberChange={(value) => setProfile((p) => ({...p, addressNumber: value}))}
                             complement={profile.complement}
                             onComplementChange={(value) => setProfile((p) => ({...p, complement: value}))}
                             stateUf={profile.state}

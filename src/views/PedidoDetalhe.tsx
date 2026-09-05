@@ -7,7 +7,8 @@ import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
 import {Link, useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, Calendar, Loader2, MapPin, Package, User} from "lucide-react";
-import {Order, useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {ProducerOrderActions} from "@/components/ProducerOrderActions";
 import {useAuth} from "@/contexts/AuthContext";
 
 const statusLabel: Record<string, string> = {
@@ -37,11 +38,6 @@ export default function PedidoDetalhe() {
     const updateOrderStatus = useUpdateOrderStatus();
 
     const viewerProducer = isProducer();
-
-    const updateStatus = async (newStatus: Order["status"]) => {
-        if (!order) return;
-        await updateOrderStatus.mutateAsync({id: order.id, status: newStatus});
-    };
 
     if (!Number.isFinite(orderId) || orderId < 1) {
         return (
@@ -173,42 +169,37 @@ export default function PedidoDetalhe() {
                     </Card>
                 </div>
 
+                {order.producer_message ? (
+                    <Card className={order.status === "cancelled" ? "border-destructive/40" : "border-primary/30"}>
+                        <CardHeader>
+                            <CardTitle className="text-lg">
+                                {order.status === "cancelled" ? "Pedido cancelado" : "Atualização do produtor"}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm space-y-2">
+                            <p className="whitespace-pre-wrap">{order.producer_message}</p>
+                            {order.status === "cancelled" && (
+                                <p className="text-muted-foreground">
+                                    O valor de R$ {Number(order.total_amount).toFixed(2).replace(".", ",")} será estornado.
+                                </p>
+                            )}
+                        </CardContent>
+                    </Card>
+                ) : null}
+
                 {viewerProducer && order.status !== "delivered" && order.status !== "cancelled" ? (
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg">Atualizar status</CardTitle>
                         </CardHeader>
-                        <CardContent className="flex flex-wrap gap-2">
-                            {order.status === "pending" && (
-                                <>
-                                    <Button size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("confirmed")}>
-                                        Confirmar
-                                    </Button>
-                                    <Button variant="outline" size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("cancelled")}>
-                                        Cancelar
-                                    </Button>
-                                </>
-                            )}
-                            {order.status === "confirmed" && (
-                                <>
-                                    <Button size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("preparing")}>
-                                        Em preparo
-                                    </Button>
-                                    <Button variant="outline" size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("cancelled")}>
-                                        Cancelar
-                                    </Button>
-                                </>
-                            )}
-                            {order.status === "preparing" && (
-                                <Button size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("shipped")}>
-                                    Enviado
-                                </Button>
-                            )}
-                            {order.status === "shipped" && (
-                                <Button size="sm" disabled={updateOrderStatus.isPending} onClick={() => void updateStatus("delivered")}>
-                                    Entregue
-                                </Button>
-                            )}
+                        <CardContent>
+                            <ProducerOrderActions
+                                order={order}
+                                disabled={updateOrderStatus.isPending}
+                                onUpdate={(status, producer_message) =>
+                                    updateOrderStatus.mutateAsync({id: order.id, status, producer_message})
+                                }
+                            />
                         </CardContent>
                     </Card>
                 ) : null}

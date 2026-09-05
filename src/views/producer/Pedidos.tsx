@@ -12,19 +12,16 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import {Loader2, User} from "lucide-react";
-import {Order, useProducerOrders, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {ProducerOrderActions} from "@/components/ProducerOrderActions";
+import {useProducerOrders, useUpdateOrderStatus} from "@/hooks/useOrders";
 import {filterByCreatedAtDateRange, type OrderDateRange} from "@/lib/orderDateRange";
 import {Link} from "react-router-dom";
 
 const ProdutorPedidos = () => {
-    const {data: orders = [], isLoading} = useProducerOrders();
+    const {data: orders = [], isLoading, isError, error, refetch} = useProducerOrders();
     const updateOrderStatus = useUpdateOrderStatus();
     const [filter, setFilter] = useState<string>("todos");
     const [dateRange, setDateRange] = useState<OrderDateRange>({from: "", to: ""});
-
-    const updateStatus = async (orderId: number, newStatus: Order["status"]) => {
-        await updateOrderStatus.mutateAsync({id: orderId, status: newStatus});
-    };
 
     const getStatusColor = (status: string) => {
         const colors = {
@@ -61,6 +58,21 @@ const ProdutorPedidos = () => {
                 <div className="flex items-center justify-center h-64">
                     <Loader2 className="w-8 h-8 animate-spin text-muted-foreground"/>
                 </div>
+            </DashboardLayout>
+        );
+    }
+
+    if (isError) {
+        return (
+            <DashboardLayout userType="produtor">
+                <Card>
+                    <CardContent className="py-10 text-center space-y-3">
+                        <p className="text-muted-foreground">
+                            {error instanceof Error ? error.message : "Não foi possível carregar os pedidos."}
+                        </p>
+                        <Button variant="outline" onClick={() => void refetch()}>Tentar novamente</Button>
+                    </CardContent>
+                </Card>
             </DashboardLayout>
         );
     }
@@ -137,6 +149,15 @@ const ProdutorPedidos = () => {
                                                 <User className="w-4 h-4 text-primary"/>
                                                 {order.customer?.name ?? "Cliente não informado"}
                                             </div>
+                                            {order.items && order.items.length > 0 && (
+                                                <ul className="text-sm space-y-1">
+                                                    {order.items.map((item) => (
+                                                        <li key={item.id}>
+                                                            {item.quantity}× {item.product_name}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
                                         </div>
                                     </div>
 
@@ -148,7 +169,7 @@ const ProdutorPedidos = () => {
                                             <div className="pt-2 border-t border-border flex justify-between font-medium">
                                                 <span>Total</span>
                                                 <span className="text-primary">
-                          R$ {order.total_amount.toFixed(2)}
+                          R$ {Number(order.total_amount).toFixed(2)}
                         </span>
                                             </div>
                                         </div>
@@ -157,64 +178,20 @@ const ProdutorPedidos = () => {
 
                                 {/* Actions */}
                                 {order.status !== "delivered" && order.status !== "cancelled" && (
-                                    <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                                        {order.status === "pending" && (
-                                            <>
-                                                <Button
-                                                    size="sm"
-                                                    disabled={updateOrderStatus.isPending}
-                                                    onClick={() => updateStatus(order.id, "confirmed")}
-                                                >
-                                                    Confirmar Pedido
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled={updateOrderStatus.isPending}
-                                                    onClick={() => updateStatus(order.id, "cancelled")}
-                                                >
-                                                    Cancelar
-                                                </Button>
-                                            </>
-                                        )}
-                                        {order.status === "confirmed" && (
-                                            <>
-                                                <Button
-                                                    size="sm"
-                                                    disabled={updateOrderStatus.isPending}
-                                                    onClick={() => updateStatus(order.id, "preparing")}
-                                                >
-                                                    Marcar como Em preparo
-                                                </Button>
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    disabled={updateOrderStatus.isPending}
-                                                    onClick={() => updateStatus(order.id, "cancelled")}
-                                                >
-                                                    Cancelar
-                                                </Button>
-                                            </>
-                                        )}
-                                        {order.status === "preparing" && (
-                                            <Button
-                                                size="sm"
-                                                disabled={updateOrderStatus.isPending}
-                                                onClick={() => updateStatus(order.id, "shipped")}
-                                            >
-                                                Marcar como Enviado
-                                            </Button>
-                                        )}
-                                        {order.status === "shipped" && (
-                                            <Button
-                                                size="sm"
-                                                disabled={updateOrderStatus.isPending}
-                                                onClick={() => updateStatus(order.id, "delivered")}
-                                            >
-                                                Marcar como Entregue
-                                            </Button>
-                                        )}
+                                    <div className="mt-4 pt-4 border-t border-border">
+                                        <ProducerOrderActions
+                                            order={order}
+                                            disabled={updateOrderStatus.isPending}
+                                            onUpdate={(status, producer_message) =>
+                                                updateOrderStatus.mutateAsync({id: order.id, status, producer_message})
+                                            }
+                                        />
                                     </div>
+                                )}
+                                {order.producer_message && (
+                                    <p className="mt-3 text-sm text-muted-foreground">
+                                        Mensagem ao cliente: {order.producer_message}
+                                    </p>
                                 )}
                             </CardContent>
                         </Card>

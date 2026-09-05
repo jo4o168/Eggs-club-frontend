@@ -19,7 +19,22 @@ export interface Order {
     customer_id?: number;
     producer_id: number;
     customer?: { id: number; name: string; email?: string } | null;
+    producer_message?: string | null;
+    items?: OrderLineItem[];
     created_at: string;
+}
+
+function asOrderList(payload: unknown): Order[] {
+    if (Array.isArray(payload)) {
+        return payload;
+    }
+    if (payload && typeof payload === "object" && "data" in payload) {
+        const nested = (payload as {data: unknown}).data;
+        if (Array.isArray(nested)) {
+            return nested;
+        }
+    }
+    return [];
 }
 
 export interface OrderDetail extends Order {
@@ -33,7 +48,7 @@ export const useProducerOrders = () => {
 
     return useQuery({
         queryKey: ['producer-orders', user?.id],
-        queryFn: () => api.get<Order[]>('/orders'),
+        queryFn: async () => asOrderList(await api.get<Order[] | {data: Order[]}>('/orders')),
         enabled: !!user,
     });
 };
@@ -43,7 +58,7 @@ export const useCustomerOrders = () => {
 
     return useQuery({
         queryKey: ['customer-orders', user?.id],
-        queryFn: () => api.get<Order[]>('/orders'),
+        queryFn: async () => asOrderList(await api.get<Order[] | {data: Order[]}>('/orders')),
         enabled: !!user,
     });
 };
@@ -62,13 +77,20 @@ export const useUpdateOrderStatus = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({id, status}: { id: number; status: string }) =>
-            api.put(`/orders/${id}`, {status}),
+        mutationFn: ({id, status, producer_message}: { id: number; status: string; producer_message?: string }) =>
+            api.put(`/orders/${id}`, {status, producer_message}),
         onSuccess: (_data, variables) => {
             queryClient.invalidateQueries({queryKey: ['producer-orders']});
             queryClient.invalidateQueries({queryKey: ['customer-orders']});
+            queryClient.invalidateQueries({queryKey: ['producer-stats']});
             queryClient.invalidateQueries({queryKey: ['order', variables.id]});
-            toast({title: 'Status do pedido atualizado!'});
+            const title =
+                variables.status === "cancelled"
+                    ? "Pedido cancelado. O cliente foi informado e o valor será estornado."
+                    : variables.status === "confirmed"
+                        ? "Pedido confirmado. O cliente foi avisado que está em preparação."
+                        : "Status do pedido atualizado!";
+            toast({title});
         },
         onError: (error: Error) => {
             toast({title: 'Erro ao atualizar status', description: error.message, variant: 'destructive'});

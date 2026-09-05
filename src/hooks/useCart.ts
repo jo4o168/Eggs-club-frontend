@@ -40,6 +40,10 @@ export function serverCartItemCount(items: ServerCartItem[] | undefined): number
     return (items ?? []).reduce((sum, item) => sum + (Number(item.quantity) || 0), 0);
 }
 
+export function cartSubtotal(items: ServerCartItem[] | undefined): number {
+    return (items ?? []).reduce((sum, item) => sum + (Number(item.line_total) || 0), 0);
+}
+
 export function useCustomerCart() {
     const {user, isClient} = useAuth();
 
@@ -113,13 +117,12 @@ export function useCheckoutCart() {
     const {user} = useAuth();
 
     return useMutation({
-        mutationFn: (body?: { delivery_address?: string | null; notes?: string | null; payment_method_id?: number | null }) =>
-            api.post<CheckoutResult>("/customer/checkout", body ?? {}),
+        mutationFn: (body: { delivery_address: string; notes?: string | null; payment_method_id: number }) =>
+            api.post<CheckoutResult>("/customer/checkout", body),
         onSuccess: () => {
             void queryClient.invalidateQueries({queryKey: cartQueryKey(user?.id)});
             void queryClient.invalidateQueries({queryKey: ["customer-orders", user?.id]});
             void queryClient.invalidateQueries({queryKey: ["customer-subscriptions", user?.id]});
-            toast({title: "Compra finalizada com sucesso!"});
         },
         onError: (error: Error) => {
             toast({title: "Erro no checkout", description: error.message, variant: "destructive"});

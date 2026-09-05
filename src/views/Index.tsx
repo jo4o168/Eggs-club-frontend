@@ -38,7 +38,7 @@ const Index = () => {
                                 assinatura recorrente ou pedido avulso.
                             </p>
                             <div className="flex flex-wrap items-center justify-center gap-3">
-                                <Link to="/#assinatura"><Button variant="hero">Como funciona a assinatura</Button></Link>
+                                <Link to="/planos"><Button variant="hero">Ver planos de assinatura</Button></Link>
                                 <Link to="/produtos"><Button variant="outline">Explorar kits de ovos</Button></Link>
                             </div>
                         </div>
@@ -72,8 +72,8 @@ const Index = () => {
                         <div className="max-w-3xl">
                             <h2 className="section-title text-foreground mb-4">Como funciona a assinatura</h2>
                             <p className="text-muted-foreground text-lg">
-                                Nosso processo de assinatura e simples: você escolhe o kit, define a periodicidade e
-                                recebe ovos frescos no ritmo que preferir.
+                                A assinatura fica nos planos: você escolhe a periodicidade, confirma e recebe ovos
+                                frescos no ritmo que preferir. Kits de ovos também podem ser comprados uma única vez.
                             </p>
                         </div>
 
@@ -83,9 +83,9 @@ const Index = () => {
                                     <div className="w-10 h-10 rounded-full bg-primary/15 text-primary flex items-center justify-center">
                                         <Search className="w-5 h-5"/>
                                     </div>
-                                    <h3 className="font-semibold">1. Escolha seu kit</h3>
+                                    <h3 className="font-semibold">1. Escolha um plano</h3>
                                     <p className="text-sm text-muted-foreground">
-                                        Vá na seção de produtos, aplique os filtros e selecione o kit de ovos que mais combina com você.
+                                        Em Planos de assinatura, compare periodicidade e kit incluso. Para compra única, veja Kits de ovos.
                                     </p>
                                 </CardContent>
                             </Card>
@@ -147,11 +147,11 @@ const Index = () => {
                         <div className="bg-accent rounded-2xl p-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-display font-semibold text-foreground">Pronto para começar?</h2>
-                                <p className="text-muted-foreground mt-1">Crie sua conta e escolha entre assinatura ou compra avulsa.</p>
+                                <p className="text-muted-foreground mt-1">Crie sua conta e escolha entre plano recorrente ou kits de ovos.</p>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                <Link to="/produtos"><Button variant="hero">Ver kits</Button></Link>
-                                <Link to="/login?mode=signup&type=customer"><Button variant="outline">Criar conta</Button></Link>
+                                <Link to="/planos"><Button variant="hero">Ver planos</Button></Link>
+                                <Link to="/produtos"><Button variant="outline">Ver kits de ovos</Button></Link>
                             </div>
                         </div>
                     </div>

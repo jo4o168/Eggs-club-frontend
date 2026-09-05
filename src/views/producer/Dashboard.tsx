@@ -2,15 +2,16 @@ import DashboardLayout from "@/components/DashboardLayout";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Package, ShoppingCart, DollarSign, TrendingUp, Loader2} from "lucide-react";
 import {useProducerStats} from "@/hooks/useStats";
-import {useProducerOrders} from "@/hooks/useOrders";
+import {Order, useProducerOrders} from "@/hooks/useOrders";
 import {useAuth} from "@/contexts/AuthContext";
+import {Link} from "react-router-dom";
 
 const ProdutorDashboard = () => {
     const {producerSettings} = useAuth();
     const {data: stats, isLoading: statsLoading} = useProducerStats();
-    const {data: orders, isLoading: ordersLoading} = useProducerOrders();
+    const {data: orders = [], isError: ordersError} = useProducerOrders();
 
-    const recentOrders = orders?.slice(0, 3) || [];
+    const recentOrders = orders.slice(0, 3);
 
     if (statsLoading) {
         return (
@@ -71,13 +72,18 @@ const ProdutorDashboard = () => {
                 <Card>
                     <CardHeader><CardTitle>Pedidos Recentes</CardTitle></CardHeader>
                     <CardContent>
-                        {recentOrders.length === 0 ? (
+                        {ordersError ? (
+                            <p className="text-muted-foreground text-center py-8">Não foi possível carregar os pedidos.</p>
+                        ) : recentOrders.length === 0 ? (
                             <p className="text-muted-foreground text-center py-8">Nenhum pedido ainda.</p>
                         ) : (
                             <div className="space-y-4">
-                                {recentOrders.map((order: any) => (
-                                    <div key={order.id}
-                                         className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg">
+                                {recentOrders.map((order: Order) => (
+                                    <Link
+                                        key={order.id}
+                                        to={`/producer/pedidos/${order.id}`}
+                                        className="flex items-center justify-between p-4 bg-secondary/50 rounded-lg"
+                                    >
                                         <div className="flex items-center gap-4">
                                             <div
                                                 className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center">
@@ -85,7 +91,10 @@ const ProdutorDashboard = () => {
                                             </div>
                                             <div>
                                                 <p className="font-medium">{order.order_number}</p>
-                                                <p className="text-sm text-muted-foreground">{order.customer?.name}</p>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {order.customer?.name}
+                                                    {order.items?.[0] ? ` · ${order.items[0].product_name}` : ""}
+                                                </p>
                                             </div>
                                         </div>
                                         <div className="text-right">
@@ -97,7 +106,7 @@ const ProdutorDashboard = () => {
                         {order.status}
                       </span>
                                         </div>
-                                    </div>
+                                    </Link>
                                 ))}
                             </div>
                         )}

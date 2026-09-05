@@ -19,17 +19,22 @@ const Footer = () => {
             <h4 className="font-semibold text-foreground">Site</h4>
             <ul className="space-y-2">
               <li>
-                <Link to="/#assinatura" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Assinatura
+                <Link to="/" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Início
                 </Link>
               </li>
               <li>
                 <Link to="/produtos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Kits de Ovos
+                  Kits de ovos
                 </Link>
               </li>
               <li>
-                <Link to="/#produtores" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Link to="/planos" className="text-sm text-muted-foreground hover:text-primary transition-colors">
+                  Planos de assinatura
+                </Link>
+              </li>
+              <li>
+                <Link to="/produtores" className="text-sm text-muted-foreground hover:text-primary transition-colors">
                   Produtores
                 </Link>
               </li>
