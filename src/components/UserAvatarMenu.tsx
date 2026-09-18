@@ -9,7 +9,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {CreditCard, Heart, LayoutDashboard, LogOut, Settings, User} from "lucide-react";
+import {CreditCard, Heart, History, LayoutDashboard, LogOut, Settings, User} from "lucide-react";
 
 export function UserAvatarMenu() {
     const navigate = useNavigate();
@@ -64,6 +64,10 @@ export function UserAvatarMenu() {
                         <DropdownMenuItem onClick={() => navigate("/customer/assinatura")}>
                             <Heart className="w-4 h-4 mr-2"/>
                             Minhas Assinaturas
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => navigate("/customer/pedidos")}>
+                            <History className="w-4 h-4 mr-2"/>
+                            Meus Pedidos
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => navigate("/customer/pagamentos")}>
                             <CreditCard className="w-4 h-4 mr-2"/>

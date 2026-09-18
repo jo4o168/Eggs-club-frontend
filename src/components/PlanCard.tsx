@@ -1,5 +1,4 @@
 import { Button } from "./ui/button";
-import { Check } from "lucide-react";
 
 interface PlanCardProps {
   name: string;
@@ -22,21 +21,21 @@ const PlanCard = ({
   isPopular = false,
   onSelect,
 }: PlanCardProps) => {
+  const meta = [frequency, features[0]].filter(Boolean).join(" · ");
+
   return (
-    <div
-      className={`relative h-full flex flex-col bg-card rounded-2xl p-6 border-2 transition-all duration-300 ${
-        isPopular
-          ? "card-highlight border-primary"
-          : "border-border hover:border-primary/50 hover:shadow-lg"
+    <article
+      className={`relative h-full flex flex-col bg-card rounded-md overflow-hidden border transition-shadow hover:shadow-md ${
+        isPopular ? "border-primary" : "border-border"
       }`}
     >
       {isPopular && (
-        <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 bg-primary text-primary-foreground text-xs font-semibold px-4 py-1 rounded-full">
-          MAIS POPULAR
+        <div className="absolute top-2 left-2 z-10 bg-primary text-primary-foreground text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded">
+          Mais popular
         </div>
       )}
 
-      <div className="aspect-video rounded-xl overflow-hidden mb-4 bg-secondary shrink-0">
+      <div className="aspect-square bg-secondary overflow-hidden">
         {imageUrl ? (
           <img src={imageUrl} alt={name} className="w-full h-full object-cover" />
         ) : (
@@ -44,34 +43,23 @@ const PlanCard = ({
         )}
       </div>
 
-      <h3 className="text-xl font-display font-semibold mb-2 line-clamp-2 min-h-[3.5rem]">{name}</h3>
-
-      <div className="flex items-baseline gap-1 mb-4 shrink-0">
-        <span className="text-3xl font-bold text-primary">{price}</span>
-        <span className="text-muted-foreground">/ {frequency}</span>
+      <div className="p-2.5 flex-1 flex flex-col gap-1">
+        <h3 className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.5rem]">{name}</h3>
+        <p className="text-xs text-muted-foreground line-clamp-1">{meta || description}</p>
+        <p className="mt-auto pt-1">
+          <span className="text-lg font-semibold text-foreground leading-none">{price}</span>
+          <span className="text-xs text-muted-foreground"> / {frequency.toLowerCase()}</span>
+        </p>
+        <Button
+          variant={isPopular ? "default" : "outline"}
+          size="sm"
+          onClick={onSelect}
+          className="w-full h-8 mt-1 text-xs"
+        >
+          Adicionar
+        </Button>
       </div>
-
-      <p className="text-muted-foreground text-sm mb-6 line-clamp-2 min-h-[2.5rem]">{description}</p>
-
-      {features.length > 0 && (
-        <ul className="space-y-3 mb-6">
-          {features.map((feature, index) => (
-            <li key={index} className="flex items-center gap-2 text-sm">
-              <Check className="w-4 h-4 text-primary shrink-0" />
-              <span className="line-clamp-1">{feature}</span>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <Button
-        variant={isPopular ? "planPrimary" : "plan"}
-        onClick={onSelect}
-        className="w-full mt-auto"
-      >
-        Adicionar ao carrinho
-      </Button>
-    </div>
+    </article>
   );
 };
 

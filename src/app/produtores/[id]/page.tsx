@@ -1,3 +1,5 @@
-"use client";
+import {redirect} from "next/navigation";
 
-export { default } from "@/views/ProdutorDetalhe";
+export default function ProdutorDetalhePage() {
+    redirect("/");
+}

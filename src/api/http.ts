@@ -77,7 +77,16 @@ export const api = {
     get: <T>(path: string) => request<T>(path),
     post: <T>(path: string, body: unknown) => request<T>(path, {method: "POST", body: JSON.stringify(body)}),
     postForm: <T>(path: string, body: FormData) => request<T>(path, {method: "POST", body}),
-    putForm: <T>(path: string, body: FormData) => request<T>(path, {method: "PUT", body}),
+    putForm: <T>(path: string, body: FormData) => {
+        if (!body.has("_method")) {
+            body.append("_method", "PUT");
+        }
+        return request<T>(path, {
+            method: "POST",
+            body,
+            headers: {"X-HTTP-Method-Override": "PUT"},
+        });
+    },
     put: <T>(path: string, body: unknown) => request<T>(path, {method: "PUT", body: JSON.stringify(body)}),
     delete: <T>(path: string) => request<T>(path, {method: "DELETE"}),
 };

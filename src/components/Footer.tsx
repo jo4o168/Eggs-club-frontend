@@ -33,11 +33,6 @@ const Footer = () => {
                   Planos de assinatura
                 </Link>
               </li>
-              <li>
-                <Link to="/produtores" className="text-sm text-muted-foreground hover:text-primary transition-colors">
-                  Produtores
-                </Link>
-              </li>
             </ul>
           </div>
 

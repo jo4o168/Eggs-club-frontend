@@ -22,6 +22,17 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {toast} from "@/hooks/use-toast";
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
     usePaymentMethods,
     useCreatePaymentMethod,
     useSetDefaultPaymentMethod,
@@ -281,14 +292,31 @@ const ClientePagamentos = () => {
                                                     Definir Padrão
                                                 </Button>
                                             )}
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => handleRemoveCard(method.id)}
-                                                disabled={deletePaymentMethod.isPending}
-                                            >
-                                                <Trash2 className="w-4 h-4 text-destructive"/>
-                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="sm"
+                                                        disabled={deletePaymentMethod.isPending}
+                                                    >
+                                                        <Trash2 className="w-4 h-4 text-destructive"/>
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Excluir forma de pagamento?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            Essa ação não pode ser desfeita. O cartão ou Pix será removido da sua conta.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={() => void handleRemoveCard(method.id)}>
+                                                            Excluir
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
                                         </div>
                                     </div>
                                 ))}

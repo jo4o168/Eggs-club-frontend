@@ -12,6 +12,8 @@ import {ToastAction} from "@/components/ui/toast";
 import {usePublicPlans, usePublicProducers} from "@/hooks/usePublicCatalog";
 import {useAuth} from "@/contexts/AuthContext";
 import {useAddCartItem} from "@/hooks/useCart";
+import {CatalogPagination, catalogGridClassName} from "@/components/CatalogPagination";
+import {CATALOG_PAGE_SIZE, pageContainingIndex, paginate} from "@/utils/paginate";
 
 const frequencyLabels: Record<number, string> = {
     0: "Semanal",
@@ -33,6 +35,7 @@ const Planos = () => {
 
     const [selectedProducerId, setSelectedProducerId] = useState("");
     const [selectedFrequencies, setSelectedFrequencies] = useState<number[]>([]);
+    const [page, setPage] = useState(1);
 
     const catalogPlans = useMemo(
         () => plans.filter((plan) => plan.is_active !== false),
@@ -56,17 +59,42 @@ const Planos = () => {
         });
     }, [catalogPlans, query, selectedProducerId, selectedFrequencies]);
 
+    const catalog = paginate(filteredPlans, page, CATALOG_PAGE_SIZE);
+
+    useEffect(() => {
+        setPage(1);
+    }, [query, selectedProducerId, selectedFrequencies]);
+
+    useEffect(() => {
+        if (page !== catalog.currentPage) {
+            setPage(catalog.currentPage);
+        }
+    }, [page, catalog.currentPage]);
+
+    useEffect(() => {
+        if (!targetPlanId) return;
+        const index = filteredPlans.findIndex((plan) => String(plan.id) === targetPlanId);
+        if (index < 0) return;
+        setPage(pageContainingIndex(index, CATALOG_PAGE_SIZE));
+    }, [targetPlanId, filteredPlans]);
+
     useEffect(() => {
         if (!targetPlanId) return;
         const element = document.getElementById(`plan-${targetPlanId}`);
         if (!element) return;
         setTimeout(() => element.scrollIntoView({behavior: "smooth", block: "center"}), 80);
-    }, [targetPlanId, filteredPlans.length]);
+    }, [targetPlanId, catalog.items]);
 
     const toggleFrequency = (value: number) => {
         setSelectedFrequencies((current) =>
             current.includes(value) ? current.filter((item) => item !== value) : [...current, value],
         );
+        setPage(1);
+    };
+
+    const handlePageChange = (nextPage: number) => {
+        setPage(nextPage);
+        window.scrollTo({top: 0, behavior: "smooth"});
     };
 
     const handleSelectPlan = (plan: (typeof filteredPlans)[number]) => {
@@ -119,36 +147,41 @@ const Planos = () => {
         <div className="min-h-screen flex flex-col">
             <Header/>
 
-            <main className="flex-1 py-8">
-                <div className="container space-y-6">
+            <main className="flex-1 py-6">
+                <div className="container space-y-4">
                     <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
                         <div>
-                            <h1 className="section-title text-foreground">Planos de assinatura</h1>
-                            <p className="text-muted-foreground mt-1">
+                            <h1 className="text-2xl font-display font-semibold text-foreground">Planos de assinatura</h1>
+                            <p className="text-sm text-muted-foreground mt-1">
                                 Receba ovos frescos no ritmo que preferir. Quer comprar só uma vez?
                             </p>
                         </div>
                         <Link to="/produtos">
-                            <Button variant="outline">Ver kits de ovos</Button>
+                            <Button variant="outline" size="sm">Ver kits de ovos</Button>
                         </Link>
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:items-stretch">
+                    <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 lg:items-start">
                         <aside className="lg:col-span-1">
-                            <Card className="h-full min-h-[22rem]">
+                            <Card>
                                 <CardContent className="p-4 space-y-4">
                                     <h3 className="font-semibold">Filtros</h3>
                                     <div className="space-y-2">
-                                        <Label>Produtor</Label>
+                                        <Label>Região / origem</Label>
                                         <select
                                             className="w-full border border-input rounded-md h-10 px-3 bg-background"
                                             value={selectedProducerId}
-                                            onChange={(e) => setSelectedProducerId(e.target.value)}
+                                            onChange={(e) => {
+                                                setSelectedProducerId(e.target.value);
+                                                setPage(1);
+                                            }}
                                         >
-                                            <option value="">Todos</option>
+                                            <option value="">Todas</option>
                                             {producers.map((producer) => (
                                                 <option key={producer.id} value={String(producer.id)}>
-                                                    {producer.producerSetting?.farm_name || producer.name}
+                                                    {producer.producerSetting?.city
+                                                        ? [producer.producerSetting.city, producer.producerSetting.state].filter(Boolean).join(" / ")
+                                                        : "Parceiro local"}
                                                 </option>
                                             ))}
                                         </select>
@@ -171,10 +204,10 @@ const Planos = () => {
                             </Card>
                         </aside>
 
-                        <section className="lg:col-span-3">
+                        <section className="lg:col-span-3 space-y-4">
                             {filteredPlans.length === 0 ? (
-                                <Card className="h-full min-h-[22rem]">
-                                    <CardContent className="p-10 h-full min-h-[22rem] flex flex-col items-center justify-center text-center space-y-3">
+                                <Card>
+                                    <CardContent className="p-10 min-h-[16rem] flex flex-col items-center justify-center text-center space-y-3">
                                         <p className="text-muted-foreground">
                                             Nenhum plano de assinatura encontrado com os filtros selecionados.
                                         </p>
@@ -184,36 +217,44 @@ const Planos = () => {
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 items-stretch">
-                                    {filteredPlans.map((plan) => (
-                                        <div
-                                            key={plan.id}
-                                            id={`plan-${plan.id}`}
-                                            className={`h-full ${String(plan.id) === targetPlanId ? "rounded-2xl ring-2 ring-primary" : ""}`}
-                                        >
-                                            <PlanCard
-                                                name={plan.name}
-                                                price={`R$ ${Number(plan.price).toFixed(2)}`}
-                                                imageUrl={plan.image_url || plan.product?.image_url}
-                                                frequency={frequencyLabels[plan.frequency] ?? "entrega"}
-                                                description={
-                                                    plan.product?.name
-                                                        ? `${plan.product.name}${plan.description ? ` — ${plan.description}` : ""}`
-                                                        : plan.description || "Plano de assinatura de ovos frescos."
-                                                }
-                                                isPopular={plan.is_featured}
-                                                features={[
-                                                    plan.product?.kit_quantity
-                                                        ? `Kit com ${plan.product.kit_quantity} ovos`
-                                                        : "Qualidade premium",
-                                                    "Entrega recorrente",
-                                                    "Cancelamento flexível",
-                                                ]}
-                                                onSelect={() => handleSelectPlan(plan)}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <>
+                                    <div className={catalogGridClassName}>
+                                        {catalog.items.map((plan) => (
+                                            <div
+                                                key={plan.id}
+                                                id={`plan-${plan.id}`}
+                                                className={`h-full ${String(plan.id) === targetPlanId ? "rounded-md ring-2 ring-primary" : ""}`}
+                                            >
+                                                <PlanCard
+                                                    name={plan.name}
+                                                    price={`R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`}
+                                                    imageUrl={plan.image_url || plan.product?.image_url}
+                                                    frequency={frequencyLabels[plan.frequency] ?? "entrega"}
+                                                    description={
+                                                        plan.product?.name
+                                                            ? `${plan.product.name}${plan.description ? ` — ${plan.description}` : ""}`
+                                                            : plan.description || "Plano de assinatura de ovos frescos."
+                                                    }
+                                                    isPopular={plan.is_featured}
+                                                    features={[
+                                                        plan.product?.kit_quantity
+                                                            ? `Kit com ${plan.product.kit_quantity} ovos`
+                                                            : "Ovos frescos",
+                                                    ]}
+                                                    onSelect={() => handleSelectPlan(plan)}
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <CatalogPagination
+                                        page={catalog.currentPage}
+                                        totalPages={catalog.totalPages}
+                                        total={catalog.total}
+                                        pageSize={catalog.pageSize}
+                                        noun="planos"
+                                        onPageChange={handlePageChange}
+                                    />
+                                </>
                             )}
                         </section>
                     </div>

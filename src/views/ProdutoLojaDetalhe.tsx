@@ -56,7 +56,6 @@ const ProdutoLojaDetalhe = () => {
         }
     }, [plans, selectedPlanId]);
 
-    const farmName = producer?.producerSetting?.farm_name || producer?.name;
     const selectedPlan = plans.find((plan) => String(plan.id) === selectedPlanId);
     const displayPrice = mode === "subscription"
         ? Number(selectedPlan?.price ?? product?.subscription_price ?? 0)
@@ -128,8 +127,7 @@ const ProdutoLojaDetalhe = () => {
         {label: "Cor", value: product.egg_color ?? "Não informada"},
         {label: "Quantidade no kit", value: `${product.kit_quantity ?? 0} ovos`},
         {label: "Tipo de venda", value: allowOneTime ? "Compra única" : "Somente assinatura"},
-        {label: "Produtor", value: farmName ?? "Não informado"},
-        {label: "Cidade", value: [producer?.producerSetting?.city, producer?.producerSetting?.state].filter(Boolean).join(" / ") || "—"},
+        {label: "Origem", value: [producer?.producerSetting?.city, producer?.producerSetting?.state].filter(Boolean).join(" / ") || "Brasil"},
     ];
 
     return (
@@ -160,14 +158,9 @@ const ProdutoLojaDetalhe = () => {
                         </div>
 
                         <div className="flex flex-col gap-6">
-                            {farmName && (
-                                <Link
-                                    to={`/produtores/${product.producer_id}`}
-                                    className="text-sm font-medium text-primary hover:underline w-fit"
-                                >
-                                    {farmName}
-                                </Link>
-                            )}
+                            <p className="text-sm text-muted-foreground">
+                                Vendido e entregue pela Egg's Club
+                            </p>
                             <div className="space-y-3">
                                 <h1 className="text-3xl md:text-4xl font-display font-semibold leading-tight">{product.name}</h1>
                                 <p className="text-sm text-muted-foreground">

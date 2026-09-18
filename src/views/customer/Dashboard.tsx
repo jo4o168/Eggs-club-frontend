@@ -67,8 +67,7 @@ const ClienteDashboard = () => {
                             <div className="mt-4 pt-4 border-t border-border flex gap-4">
                                 <Link to="/cliente/assinatura"><Button variant="hero" size="sm">Gerenciar
                                     Assinatura</Button></Link>
-                                <Link to="/produtores"><Button variant="outline" size="sm">Ver Outros
-                                    Produtores</Button></Link>
+                                <Link to="/planos"><Button variant="outline" size="sm">Ver planos</Button></Link>
                             </div>
                         </CardContent>
                     </Card>
@@ -77,7 +76,7 @@ const ClienteDashboard = () => {
                         <CardContent className="py-8 text-center">
                             <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4"/>
                             <h3 className="text-lg font-semibold mb-2">Você ainda não tem uma assinatura</h3>
-                            <p className="text-muted-foreground mb-4">Explore nossos produtores e escolha seu plano.</p>
+                            <p className="text-muted-foreground mb-4">Escolha um plano de assinatura e receba ovos frescos no ritmo que preferir.</p>
                             <Link to="/planos"><Button variant="hero">Ver Planos</Button></Link>
                         </CardContent>
                     </Card>

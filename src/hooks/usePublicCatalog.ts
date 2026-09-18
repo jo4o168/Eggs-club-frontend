@@ -4,13 +4,10 @@ import { api } from "@/api/http";
 export interface PublicProducer {
   id: number;
   name: string;
-  email: string;
-  phone: string | null;
   producerSetting?: {
     farm_name?: string | null;
     city?: string | null;
     state?: string | null;
-    description?: string | null;
   } | null;
 }
 

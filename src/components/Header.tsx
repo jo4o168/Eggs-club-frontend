@@ -29,7 +29,6 @@ const Header = ({onMenuClick}: HeaderProps) => {
     const isHomePage = location.pathname === "/";
     const isKitsPage = location.pathname.startsWith("/produtos");
     const isPlansPage = location.pathname.startsWith("/planos");
-    const isProducersPage = location.pathname.startsWith("/produtores");
     const homeHref = isProducer ? "/producer/dashboard" : "/";
 
     const navLinkClass = (active: boolean) =>
@@ -64,11 +63,6 @@ const Header = ({onMenuClick}: HeaderProps) => {
                             <Link to="/planos">
                                 <Button variant="ghost" size="sm" className={navLinkClass(isPlansPage)}>
                                     Planos de assinatura
-                                </Button>
-                            </Link>
-                            <Link to="/produtores">
-                                <Button variant="ghost" size="sm" className={navLinkClass(isProducersPage)}>
-                                    Produtores
                                 </Button>
                             </Link>
                         </nav>
@@ -131,11 +125,6 @@ const Header = ({onMenuClick}: HeaderProps) => {
                         <Link to="/planos">
                             <Button variant="ghost" size="sm" className={navLinkClass(isPlansPage)}>
                                 Assinatura
-                            </Button>
-                        </Link>
-                        <Link to="/produtores">
-                            <Button variant="ghost" size="sm" className={navLinkClass(isProducersPage)}>
-                                Produtores
                             </Button>
                         </Link>
                     </div>
