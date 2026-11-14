@@ -11,8 +11,11 @@ import {Loader2} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
 import {ApiRequestError} from "@/api/http";
 import {firstMessagePerField} from "@/lib/validationMessages";
+import {isAdult, isValidCnpj, isValidCpf} from "@/utils/brazilianDocument";
+import {onlyDigits} from "@/utils/inputMasks";
+import IdentityFields from "@/components/IdentityFields";
 
-type SignupFieldKey = "name" | "email" | "password" | "passwordConfirm" | "farmName" | "location";
+type SignupFieldKey = "name" | "email" | "password" | "passwordConfirm" | "farmName" | "location" | "document" | "birthDate";
 
 const Login = () => {
     const [isLogin, setIsLogin] = useState(true);
@@ -25,6 +28,9 @@ const Login = () => {
         passwordConfirmation: "",
         farmName: "",
         location: "",
+        documentType: "cpf" as "cpf" | "cnpj",
+        document: "",
+        birthDate: "",
     });
 
     const resetForm = () => {
@@ -35,6 +41,9 @@ const Login = () => {
             passwordConfirmation: "",
             farmName: "",
             location: "",
+            documentType: "cpf",
+            document: "",
+            birthDate: "",
         });
         setSignupFieldErrors({});
     };
@@ -109,6 +118,18 @@ const Login = () => {
                 const hasSymbol = /[@$!%*#?&]/.test(formData.password);
                 const hasMinLength = formData.password.length >= 8;
 
+                const documentType = userType === ProfileRole.PRODUCER ? formData.documentType : "cpf";
+                if (documentType === "cnpj" ? !isValidCnpj(formData.document) : !isValidCpf(formData.document)) {
+                    setSignupFieldErrors({
+                        document: documentType === "cnpj" ? "Informe um CNPJ válido." : "Informe um CPF válido.",
+                    });
+                    throw new Error("Documento inválido.");
+                }
+                if (!isAdult(formData.birthDate)) {
+                    setSignupFieldErrors({birthDate: "É necessário ter 18 anos ou mais."});
+                    throw new Error("É necessário ter 18 anos ou mais.");
+                }
+
                 if (!(hasLower && hasUpper && hasNumber && hasSymbol && hasMinLength)) {
                     setSignupFieldErrors({
                         password: "Use 8+ caracteres com maiúscula, minúscula, número e um símbolo (@$!%*#?&).",
@@ -126,6 +147,11 @@ const Login = () => {
                     userType,
                     userType === ProfileRole.PRODUCER ? formData.farmName : undefined,
                     userType === ProfileRole.PRODUCER ? formData.location : undefined,
+                    {
+                        documentType,
+                        document: onlyDigits(formData.document),
+                        birthDate: formData.birthDate,
+                    },
                 );
                 toast({
                     title: "Conta criada",
@@ -146,6 +172,8 @@ const Login = () => {
                     passwordConfirm: f.password_confirmation,
                     farmName: f.farm_name,
                     location: f.location,
+                    document: f.document ?? f.cpf ?? f.cnpj,
+                    birthDate: f.birth_date,
                 });
             }
             toast({
@@ -171,6 +199,7 @@ const Login = () => {
                                 value={userType === ProfileRole.PRODUCER ? "produtor" : "cliente"}
                                 onValueChange={(v) => {
                                     setUserType(v === "produtor" ? ProfileRole.PRODUCER : ProfileRole.CLIENT);
+                                    setFormData((prev) => ({...prev, documentType: "cpf", document: ""}));
                                     setSignupFieldErrors({});
                                 }}
                                 className="mb-6"
@@ -201,6 +230,27 @@ const Login = () => {
                                         <p className="text-xs text-destructive">{signupFieldErrors.name}</p>
                                     )}
                                 </div>
+                            )}
+
+                            {!isLogin && (
+                                <IdentityFields
+                                    documentType={userType === ProfileRole.PRODUCER ? formData.documentType : "cpf"}
+                                    allowCnpj={userType === ProfileRole.PRODUCER}
+                                    onDocumentTypeChange={(type) => setFormData({...formData, documentType: type, document: ""})}
+                                    document={formData.document}
+                                    onDocumentChange={(value) => {
+                                        setFormData({...formData, document: value});
+                                        clearSignupError("document");
+                                    }}
+                                    birthDate={formData.birthDate}
+                                    onBirthDateChange={(value) => {
+                                        setFormData({...formData, birthDate: value});
+                                        clearSignupError("birthDate");
+                                    }}
+                                    documentError={signupFieldErrors.document}
+                                    birthDateError={signupFieldErrors.birthDate}
+                                    disabled={loading}
+                                />
                             )}
 
                             <div className="space-y-2">

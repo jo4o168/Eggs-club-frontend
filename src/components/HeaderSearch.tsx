@@ -142,7 +142,7 @@ export function HeaderSearch() {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="flex w-full max-w-[11rem] sm:max-w-xs lg:max-w-sm">
+        <form onSubmit={handleSubmit} className="flex w-full min-w-0">
             <div ref={rootRef} className="relative w-full">
                 <Search className="w-4 h-4 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"/>
                 <Input
@@ -251,9 +251,9 @@ function SearchGroup({
                         onMouseEnter={() => onHover(absoluteIndex)}
                         onClick={() => onSelect(hit.href)}
                     >
-                        <span className="relative w-12 h-12 rounded-xl overflow-hidden bg-secondary shrink-0 ring-1 ring-border">
+                        <span className="relative w-14 h-14 rounded-md overflow-hidden bg-secondary shrink-0 ring-1 ring-border">
                             {hit.imageUrl ? (
-                                <img src={hit.imageUrl} alt="" className="w-full h-full object-cover"/>
+                                <img src={hit.imageUrl} alt="" className="w-full h-full object-contain p-1"/>
                             ) : (
                                 <span className="w-full h-full flex items-center justify-center text-primary">
                                     {hit.kind === "plan" ? <Repeat className="w-5 h-5"/> : <Egg className="w-5 h-5"/>}

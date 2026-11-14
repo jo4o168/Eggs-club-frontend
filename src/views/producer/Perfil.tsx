@@ -9,8 +9,11 @@ import {Camera, MapPin, Phone, Mail, Globe} from "lucide-react";
 import {useProfile, useUpdateProfile, useUpdateProfileAvatar} from "@/hooks/useProfiles";
 import {useProducerSetting, useUpsertProducerSetting} from "@/hooks/useProducerSettings";
 import {maskPhone, onlyDigits} from "@/utils/inputMasks";
+import {isAdult, isValidCnpj, isValidCpf, maskDocument} from "@/utils/brazilianDocument";
 import {normalizeUfToSigla} from "@/utils/brazilStates";
 import BrazilLocationFields from "@/components/BrazilLocationFields";
+import IdentityFields from "@/components/IdentityFields";
+import {toast} from "@/hooks/use-toast";
 
 const ProdutorPerfil = () => {
     const {data: baseProfile, isLoading: profileLoading} = useProfile();
@@ -25,6 +28,9 @@ const ProdutorPerfil = () => {
         ownerName: "",
         email: "",
         phone: "",
+        documentType: "cpf" as "cpf" | "cnpj",
+        document: "",
+        birthDate: "",
         city: "",
         state: "",
         zipCode: "",
@@ -41,6 +47,12 @@ const ProdutorPerfil = () => {
             ownerName: baseProfile?.name ?? "",
             email: baseProfile?.email ?? "",
             phone: maskPhone(baseProfile?.phone ?? ""),
+            documentType: baseProfile?.document_type === "cnpj" ? "cnpj" : "cpf",
+            document: maskDocument(
+                (baseProfile?.document_type === "cnpj" ? baseProfile?.cnpj : baseProfile?.cpf) ?? "",
+                baseProfile?.document_type === "cnpj" ? "cnpj" : "cpf",
+            ),
+            birthDate: (baseProfile?.birth_date ?? "").slice(0, 10),
             farmName: producerSetting?.farm_name ?? "",
             address: producerSetting?.address ?? "",
             description: producerSetting?.description ?? "",
@@ -54,10 +66,25 @@ const ProdutorPerfil = () => {
     }, [baseProfile, producerSetting]);
 
     const handleSave = async () => {
+        const documentOk = profile.documentType === "cnpj" ? isValidCnpj(profile.document) : isValidCpf(profile.document);
+        if (!documentOk) {
+            toast({
+                title: profile.documentType === "cnpj" ? "Informe um CNPJ válido." : "Informe um CPF válido.",
+                variant: "destructive",
+            });
+            return;
+        }
+        if (!isAdult(profile.birthDate)) {
+            toast({title: "É necessário ter 18 anos ou mais.", variant: "destructive"});
+            return;
+        }
         await updateProfile.mutateAsync({
             name: profile.ownerName,
             email: profile.email,
             phone: onlyDigits(profile.phone) || null,
+            document_type: profile.documentType,
+            document: onlyDigits(profile.document),
+            birth_date: profile.birthDate,
         });
 
         await upsertProducerSetting.mutateAsync({
@@ -173,6 +200,16 @@ const ProdutorPerfil = () => {
                                 />
                             </div>
                         </div>
+
+                        <IdentityFields
+                            allowCnpj
+                            documentType={profile.documentType}
+                            onDocumentTypeChange={(type) => setProfile({...profile, documentType: type, document: ""})}
+                            document={profile.document}
+                            onDocumentChange={(value) => setProfile({...profile, document: value})}
+                            birthDate={profile.birthDate}
+                            onBirthDateChange={(value) => setProfile({...profile, birthDate: value})}
+                        />
 
                         <div className="space-y-2">
                             <Label htmlFor="description">Descrição</Label>

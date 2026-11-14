@@ -99,10 +99,7 @@ const Planos = () => {
 
     const handleSelectPlan = (plan: (typeof filteredPlans)[number]) => {
         if (profile?.role === "producer") {
-            toast({
-                title: "Assinaturas são para clientes",
-                description: "Entre com uma conta de cliente para assinar um plano.",
-            });
+            navigate("/producer/dashboard");
             return;
         }
 
@@ -220,30 +217,31 @@ const Planos = () => {
                                 <>
                                     <div className={catalogGridClassName}>
                                         {catalog.items.map((plan) => (
-                                            <div
+                                            <PlanCard
                                                 key={plan.id}
                                                 id={`plan-${plan.id}`}
-                                                className={`h-full ${String(plan.id) === targetPlanId ? "rounded-md ring-2 ring-primary" : ""}`}
-                                            >
-                                                <PlanCard
-                                                    name={plan.name}
-                                                    price={`R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`}
-                                                    imageUrl={plan.image_url || plan.product?.image_url}
-                                                    frequency={frequencyLabels[plan.frequency] ?? "entrega"}
-                                                    description={
-                                                        plan.product?.name
-                                                            ? `${plan.product.name}${plan.description ? ` — ${plan.description}` : ""}`
-                                                            : plan.description || "Plano de assinatura de ovos frescos."
-                                                    }
-                                                    isPopular={plan.is_featured}
-                                                    features={[
-                                                        plan.product?.kit_quantity
-                                                            ? `Kit com ${plan.product.kit_quantity} ovos`
-                                                            : "Ovos frescos",
-                                                    ]}
-                                                    onSelect={() => handleSelectPlan(plan)}
-                                                />
-                                            </div>
+                                                name={plan.name}
+                                                price={`R$ ${Number(plan.price).toFixed(2).replace(".", ",")}`}
+                                                imageUrl={plan.image_url || plan.product?.image_url}
+                                                frequency={frequencyLabels[plan.frequency] ?? "entrega"}
+                                                description={
+                                                    plan.product?.name
+                                                        ? `${plan.product.name}${plan.description ? ` — ${plan.description}` : ""}`
+                                                        : plan.description || "Plano de assinatura de ovos frescos."
+                                                }
+                                                isPopular={plan.is_featured}
+                                                highlighted={String(plan.id) === targetPlanId}
+                                                ratingAverage={plan.product?.rating_average}
+                                                ratingCount={plan.product?.rating_count}
+                                                features={[
+                                                    plan.product?.kit_quantity
+                                                        ? `Kit com ${plan.product.kit_quantity} ovos`
+                                                        : "Ovos frescos",
+                                                ]}
+                                                ctaLabel={profile?.role === "producer" ? "Área do produtor" : "Assinar"}
+                                                ctaVariant={profile?.role === "producer" ? "outline" : "default"}
+                                                onSelect={() => handleSelectPlan(plan)}
+                                            />
                                         ))}
                                     </div>
                                     <CatalogPagination

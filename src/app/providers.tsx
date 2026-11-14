@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ThemeProvider } from "next-themes";
-import { ReactNode, useState } from "react";
+import { ReactNode, Suspense, useState } from "react";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProducerWorkspaceGuard } from "@/components/ProducerWorkspaceGuard";
 import { Toaster } from "@/components/ui/toaster";
@@ -15,7 +15,7 @@ export function Providers({ children }: { children: ReactNode }) {
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <ProducerWorkspaceGuard />
-          {children}
+          <Suspense fallback={null}>{children}</Suspense>
           <Toaster />
         </AuthProvider>
       </QueryClientProvider>

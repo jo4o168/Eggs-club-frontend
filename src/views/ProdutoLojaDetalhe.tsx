@@ -9,6 +9,9 @@ import {toast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
 import {useAuth} from "@/contexts/AuthContext";
 import {Loader2, MapPin, Minus, Package, Plus, Repeat, ShoppingCart, Truck} from "lucide-react";
+import {useProductReviews} from "@/hooks/usePresentationExtras";
+import CatalogRating from "@/components/CatalogRating";
+import StarRating from "@/components/StarRating";
 
 const frequencyLabels: Record<number, string> = {
     0: "Semanal",
@@ -43,6 +46,7 @@ const ProdutoLojaDetalhe = () => {
     const [quantity, setQuantity] = useState(1);
     const [selectedPlanId, setSelectedPlanId] = useState<string>("");
     const addCartItem = useAddCartItem();
+    const {data: reviews = []} = useProductReviews(productId || undefined);
 
     useEffect(() => {
         if (product && !allowOneTime) {
@@ -147,7 +151,7 @@ const ProdutoLojaDetalhe = () => {
                         <div className="lg:sticky lg:top-24 self-start">
                             <div className="aspect-square rounded-2xl overflow-hidden bg-secondary border border-border">
                                 {product.image_url ? (
-                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"/>
+                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-4"/>
                                 ) : (
                                     <div className="w-full h-full flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                         <Package className="w-10 h-10"/>
@@ -169,6 +173,12 @@ const ProdutoLojaDetalhe = () => {
                                         .join(" · ")}
                                 </p>
                             </div>
+
+                            <CatalogRating
+                                average={product.rating_average}
+                                count={product.rating_count}
+                                className="text-sm"
+                            />
 
                             <div>
                                 <p className="text-3xl font-bold text-primary">R$ {formatMoney(displayPrice)}</p>
@@ -270,6 +280,27 @@ const ProdutoLojaDetalhe = () => {
                                 ))}
                             </dl>
                         </div>
+                    </section>
+
+                    <section className="border-t border-border pt-10 space-y-4">
+                        <h2 className="text-2xl font-display font-semibold">Avaliações</h2>
+                        {reviews.length === 0 ? (
+                            <p className="text-muted-foreground">Nenhuma avaliação ainda. Compre o kit para ser o primeiro a opinar.</p>
+                        ) : (
+                            <ul className="space-y-3">
+                                {reviews.map((review) => (
+                                    <li key={review.id} className="rounded-xl border border-border p-4 space-y-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <p className="font-medium text-sm">{review.customer_name ?? "Cliente"}</p>
+                                            <StarRating value={review.rating} size="sm"/>
+                                        </div>
+                                        {review.comment ? (
+                                            <p className="text-sm text-muted-foreground">{review.comment}</p>
+                                        ) : null}
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
                     </section>
                 </div>
             </main>

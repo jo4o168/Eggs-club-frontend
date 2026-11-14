@@ -6,10 +6,13 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Camera, MapPin, Phone, Mail} from "lucide-react";
 import {useProfile, useUpdateProfile, useUpdateProfileAvatar} from "@/hooks/useProfiles";
-import {maskCep, maskCpf, maskPhone, onlyDigits} from "@/utils/inputMasks";
+import {maskCep, maskPhone, onlyDigits} from "@/utils/inputMasks";
+import {isAdult, isValidCpf, maskDocument} from "@/utils/brazilianDocument";
 import {normalizeUfToSigla} from "@/utils/brazilStates";
 import {splitStreetAndNumber} from "@/utils/deliveryAddress";
 import BrazilLocationFields from "@/components/BrazilLocationFields";
+import IdentityFields from "@/components/IdentityFields";
+import {toast} from "@/hooks/use-toast";
 
 const ClientePerfil = () => {
     const {data: remoteProfile, isLoading} = useProfile();
@@ -21,6 +24,7 @@ const ClientePerfil = () => {
         email: "",
         phone: "",
         cpf: "",
+        birthDate: "",
         address: "",
         addressNumber: "",
         city: "",
@@ -36,7 +40,8 @@ const ClientePerfil = () => {
             name: remoteProfile.name ?? "",
             email: remoteProfile.email ?? "",
             phone: maskPhone(remoteProfile.phone ?? ""),
-            cpf: maskCpf(remoteProfile.cpf ?? ""),
+            cpf: maskDocument(remoteProfile.cpf ?? "", "cpf"),
+            birthDate: (remoteProfile.birth_date ?? "").slice(0, 10),
             address: remoteProfile.address_number
                 ? (remoteProfile.address ?? "")
                 : splitStreetAndNumber(remoteProfile.address ?? "").street,
@@ -50,11 +55,21 @@ const ClientePerfil = () => {
     }, [remoteProfile]);
 
     const handleSave = async () => {
+        if (!isValidCpf(profile.cpf)) {
+            toast({title: "Informe um CPF válido.", variant: "destructive"});
+            return;
+        }
+        if (!isAdult(profile.birthDate)) {
+            toast({title: "É necessário ter 18 anos ou mais.", variant: "destructive"});
+            return;
+        }
         await updateProfile.mutateAsync({
             name: profile.name,
             email: profile.email,
             phone: onlyDigits(profile.phone) || null,
-            cpf: onlyDigits(profile.cpf) || null,
+            document_type: "cpf",
+            document: onlyDigits(profile.cpf),
+            birth_date: profile.birthDate,
             address: profile.address || null,
             address_number: profile.addressNumber.trim() || null,
             city: profile.city || null,
@@ -139,28 +154,23 @@ const ClientePerfil = () => {
                         <CardTitle>Informações Pessoais</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="name">Nome Completo</Label>
-                                <Input
-                                    id="name"
-                                    value={profile.name}
-                                    onChange={(e) =>
-                                        setProfile({...profile, name: e.target.value})
-                                    }
-                                />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="cpf">CPF</Label>
-                                <Input
-                                    id="cpf"
-                                    value={profile.cpf}
-                                    onChange={(e) =>
-                                        setProfile({...profile, cpf: maskCpf(e.target.value)})
-                                    }
-                                />
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="name">Nome Completo</Label>
+                            <Input
+                                id="name"
+                                value={profile.name}
+                                onChange={(e) =>
+                                    setProfile({...profile, name: e.target.value})
+                                }
+                            />
                         </div>
+                        <IdentityFields
+                            documentType="cpf"
+                            document={profile.cpf}
+                            onDocumentChange={(value) => setProfile({...profile, cpf: value})}
+                            birthDate={profile.birthDate}
+                            onBirthDateChange={(value) => setProfile({...profile, birthDate: value})}
+                        />
 
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">

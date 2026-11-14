@@ -56,7 +56,11 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
     return (
         <div className="min-h-screen bg-background">
             <Header onMenuClick={() => setSidebarOpen(true)}/>
-            <div className="flex min-h-[calc(100vh-4rem)]">
+            <div className={`flex ${
+                normalizedUserType === "producer"
+                    ? "min-h-[calc(100vh-3.5rem)] sm:min-h-[calc(100vh-4rem)]"
+                    : "min-h-[calc(100vh-6.5rem)] md:min-h-[calc(100vh-4rem)]"
+            }`}>
             {sidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 z-40 lg:hidden"
@@ -65,9 +69,11 @@ const DashboardLayout = ({children, userType}: DashboardLayoutProps) => {
             )}
 
             <aside
-                className={`fixed lg:static top-16 lg:top-0 bottom-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
-                    sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-                }`}
+                className={`fixed lg:static bottom-0 left-0 z-50 w-64 bg-card border-r border-border transform transition-transform duration-200 ease-in-out ${
+                    normalizedUserType === "producer"
+                        ? "top-14 sm:top-16 lg:top-0"
+                        : "top-[6.5rem] md:top-16 lg:top-0"
+                } ${sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"}`}
             >
                 <div className="flex flex-col h-full">
                     <nav className="flex-1 p-4 space-y-1">

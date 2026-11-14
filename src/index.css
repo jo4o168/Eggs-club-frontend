@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @theme {
     --color-background: hsl(35 50% 97%);
@@ -30,8 +29,9 @@
     --color-sidebar-border: hsl(220 13% 91%);
     --color-sidebar-ring: hsl(217.2 91.2% 59.8%);
     --radius: 0.75rem;
-    --font-display: 'Playfair Display', serif;
-    --font-body: 'Inter', sans-serif;
+    --font-display: var(--font-nunito), 'Nunito', ui-rounded, sans-serif;
+    --font-body: var(--font-nunito-sans), 'Nunito Sans', ui-sans-serif, sans-serif;
+    --font-sans: var(--font-nunito-sans), 'Nunito Sans', ui-sans-serif, sans-serif;
 }
 
 .dark {
@@ -90,14 +90,15 @@
 
     .hero-title {
         font-size: clamp(2.25rem, 5vw, 3.75rem);
-        font-weight: 500;
-        letter-spacing: -0.025em;
+        font-weight: 800;
+        letter-spacing: -0.03em;
         font-family: var(--font-display);
     }
 
     .section-title {
         font-size: clamp(1.875rem, 4vw, 2.25rem);
-        font-weight: 500;
+        font-weight: 700;
+        letter-spacing: -0.02em;
         font-family: var(--font-display);
     }
 

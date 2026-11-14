@@ -29,6 +29,8 @@ export interface PublicPlan {
     egg_size?: string | null;
     egg_color?: string | null;
     image_url?: string | null;
+    rating_average?: number | null;
+    rating_count?: number | null;
   } | null;
 }
 
@@ -46,6 +48,8 @@ export interface PublicProduct {
   stock_quantity?: number | null;
   image_url?: string | null;
   producer_id: number;
+  rating_average?: number | null;
+  rating_count?: number | null;
 }
 
 function getApiBaseUrl() {

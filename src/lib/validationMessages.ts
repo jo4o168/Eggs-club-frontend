@@ -27,6 +27,11 @@ export const API_FIELD_LABELS: Record<string, string> = {
     delivery_address: "Endereço de entrega",
     payment_method_id: "Pagamento",
     notes: "Observações",
+    document: "CPF/CNPJ",
+    document_type: "Tipo de documento",
+    birth_date: "Data de nascimento",
+    rating: "Nota",
+    comment: "Comentário",
 };
 
 function firstMessage(value: string | string[] | undefined): string {

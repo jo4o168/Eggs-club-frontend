@@ -44,12 +44,12 @@ const CartLineItem = ({
 
     return (
         <article className="flex gap-4 p-4 sm:p-5">
-            <div className="h-20 w-20 sm:h-24 sm:w-24 shrink-0 overflow-hidden rounded-xl bg-secondary border border-border">
+            <div className="h-24 w-24 shrink-0 overflow-hidden rounded-md bg-secondary border border-border">
                 {item.product?.image_url ? (
                     <img
                         src={item.product.image_url}
                         alt={item.product.name}
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-contain p-1"
                     />
                 ) : (
                     <div className="flex h-full w-full items-center justify-center text-muted-foreground">

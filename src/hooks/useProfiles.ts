@@ -9,6 +9,10 @@ export interface Profile {
     email: string;
     phone: string | null;
     cpf?: string | null;
+    cnpj?: string | null;
+    document?: string | null;
+    document_type?: "cpf" | "cnpj" | string | null;
+    birth_date?: string | null;
     address?: string | null;
     address_number?: string | null;
     city?: string | null;

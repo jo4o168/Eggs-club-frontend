@@ -17,8 +17,10 @@ import {Link, useNavigate} from "react-router-dom";
 import {toast} from "@/hooks/use-toast";
 import {formatDeliveryAddress, isDeliveryAddressComplete, splitStreetAndNumber} from "@/utils/deliveryAddress";
 import {maskCep, maskPhone, onlyDigits} from "@/utils/inputMasks";
+import {identityIsComplete} from "@/utils/brazilianDocument";
 import {normalizeUfToSigla} from "@/utils/brazilStates";
-import {Loader2, MapPin, MessageSquare} from "lucide-react";
+import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
+import {Loader2, MapPin, MessageSquare, ShieldCheck} from "lucide-react";
 
 const CheckoutCliente = () => {
     const navigate = useNavigate();
@@ -85,13 +87,27 @@ const CheckoutCliente = () => {
     );
 
     const addressReady = isDeliveryAddressComplete(addressParts);
+    const identityReady = identityIsComplete({
+        documentType: profile?.document_type,
+        cpf: profile?.cpf,
+        cnpj: profile?.cnpj,
+        birthDate: (profile?.birth_date ?? "").slice(0, 10),
+    });
     const missingPlan = items.some((item) => item.purchase_mode === "subscription" && !item.subscription_plan_id);
     const canSubmit =
-        items.length > 0 && addressReady && !!paymentMethodId && !missingPlan && !checkout.isPending;
+        items.length > 0 && addressReady && identityReady && !!paymentMethodId && !missingPlan && !checkout.isPending;
 
     const handleSubmit = async () => {
         if (missingPlan) {
             toast({title: "Selecione o plano de cada assinatura no carrinho.", variant: "destructive"});
+            return;
+        }
+        if (!identityReady) {
+            toast({
+                title: "Complete seu cadastro",
+                description: "Informe um CPF válido e confirme que você tem 18 anos ou mais no perfil.",
+                variant: "destructive",
+            });
             return;
         }
         if (!addressReady) {
@@ -179,6 +195,18 @@ const CheckoutCliente = () => {
                     ) : (
                         <div className="grid lg:grid-cols-[minmax(0,1fr)_320px] gap-6 items-start">
                             <div className="space-y-6">
+                                {!identityReady ? (
+                                    <Alert variant="destructive">
+                                        <ShieldCheck className="h-4 w-4"/>
+                                        <AlertTitle>Cadastro incompleto</AlertTitle>
+                                        <AlertDescription>
+                                            A loja só finaliza compra para maiores de 18 anos com CPF válido.{" "}
+                                            <Link to="/customer/perfil" className="underline underline-offset-2">
+                                                Completar perfil
+                                            </Link>
+                                        </AlertDescription>
+                                    </Alert>
+                                ) : null}
                                 <section className="rounded-2xl border border-border bg-card p-5 space-y-5">
                                     <div className="flex items-start gap-2">
                                         <MapPin className="h-5 w-5 text-primary mt-0.5"/>

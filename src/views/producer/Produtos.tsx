@@ -371,12 +371,12 @@ const ProdutorProdutos = () => {
                         </CardContent>
                     </Card>
                 ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 items-stretch">
                     {products.map((product) => (
                         <Card key={product.id} className="h-full flex flex-col overflow-hidden">
-                            <div className={`aspect-video bg-secondary relative ${!product.is_active ? "opacity-60" : ""}`}>
+                            <div className={`aspect-square bg-secondary relative ${!product.is_active ? "opacity-60" : ""}`}>
                                 {product.image_url ? (
-                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"/>
+                                    <img src={product.image_url} alt={product.name} className="w-full h-full object-contain p-2"/>
                                 ) : (
                                     <div className="w-full h-full flex items-center justify-center">
                                         <Package className="w-8 h-8 text-muted-foreground"/>
@@ -386,8 +386,8 @@ const ProdutorProdutos = () => {
                                     {product.is_active ? "Ativo" : "Inativo"}
                                 </span>
                             </div>
-                            <CardHeader className={`pb-2 ${!product.is_active ? "opacity-60" : ""}`}>
-                                <CardTitle className="text-lg line-clamp-2 min-h-[3.5rem]">{product.name}</CardTitle>
+                            <CardHeader className={`p-2.5 pb-2 ${!product.is_active ? "opacity-60" : ""}`}>
+                                <CardTitle className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.5rem]">{product.name}</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col">
                                 <div className={!product.is_active ? "opacity-60" : ""}>

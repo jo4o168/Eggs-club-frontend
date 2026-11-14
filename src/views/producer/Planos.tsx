@@ -534,7 +534,7 @@ const ProdutorPlanos = () => {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-stretch">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 items-stretch">
                         {plans.map((plan) => (
                             <Card
                                 key={plan.id}
@@ -550,12 +550,12 @@ const ProdutorPlanos = () => {
                                         </Badge>
                                     </div>
                                 )}
-                                <div className={`aspect-video bg-secondary relative ${!plan.is_active ? "opacity-60" : ""}`}>
+                                <div className={`aspect-square bg-secondary relative ${!plan.is_active ? "opacity-60" : ""}`}>
                                     {(plan.image_url || plan.product?.image_url) ? (
                                         <img
                                             src={plan.image_url || plan.product?.image_url || ""}
                                             alt={plan.name}
-                                            className="w-full h-full object-cover"
+                                            className="w-full h-full object-contain p-2"
                                         />
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center">
@@ -563,9 +563,9 @@ const ProdutorPlanos = () => {
                                         </div>
                                     )}
                                 </div>
-                                <CardHeader>
+                                <CardHeader className="p-2.5 pb-2">
                                     <div className="flex items-start justify-between gap-2">
-                                        <CardTitle className="text-xl line-clamp-2 min-h-[3.5rem]">{plan.name}</CardTitle>
+                                        <CardTitle className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.5rem]">{plan.name}</CardTitle>
                                         <Badge
                                             className={plan.is_active ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-700"}>
                                             {plan.is_active ? "Ativo" : "Inativo"}

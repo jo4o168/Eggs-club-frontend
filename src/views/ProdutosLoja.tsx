@@ -4,19 +4,20 @@ import {Card, CardContent} from "@/components/ui/card";
 import {Label} from "@/components/ui/label";
 import {Checkbox} from "@/components/ui/checkbox";
 import {Button} from "@/components/ui/button";
-import {Link, useLocation} from "react-router-dom";
+import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useMemo, useState} from "react";
 import {usePublicProducts, usePublicProducers} from "@/hooks/usePublicCatalog";
 import {useAuth} from "@/contexts/AuthContext";
 import {toast} from "@/hooks/use-toast";
 import {useAddCartItem} from "@/hooks/useCart";
-import {ShoppingCart} from "lucide-react";
 import {CatalogPagination, catalogGridClassName} from "@/components/CatalogPagination";
+import CatalogItemCard from "@/components/CatalogItemCard";
 import {CATALOG_PAGE_SIZE, pageContainingIndex, paginate} from "@/utils/paginate";
 import {formatBRL} from "@/utils/money";
 
 const ProdutosLoja = () => {
     const {profile} = useAuth();
+    const navigate = useNavigate();
     const addCartItem = useAddCartItem();
     const isCustomer = profile?.role === "customer";
     const isAuthenticated = !!profile;
@@ -102,16 +103,24 @@ const ProdutosLoja = () => {
         }, 80);
     }, [targetProductId, catalog.items]);
 
-    const handleAddToCart = (productId: number) => {
-        void addCartItem
-            .mutateAsync({
-                product_id: productId,
-                purchase_mode: "one_time",
-                quantity: 1,
-            })
-            .then(() => {
-                toast({title: "Produto adicionado ao carrinho!"});
-            });
+    const handleKitCta = (productId: number) => {
+        if (isCustomer) {
+            void addCartItem
+                .mutateAsync({
+                    product_id: productId,
+                    purchase_mode: "one_time",
+                    quantity: 1,
+                })
+                .then(() => {
+                    toast({title: "Produto adicionado ao carrinho!"});
+                });
+            return;
+        }
+        if (isAuthenticated) {
+            navigate("/producer/dashboard");
+            return;
+        }
+        navigate("/login?mode=signup&type=customer");
     };
 
     const handlePageChange = (nextPage: number) => {
@@ -203,62 +212,24 @@ const ProdutosLoja = () => {
                                 <>
                                     <div className={catalogGridClassName}>
                                         {catalog.items.map((product) => (
-                                            <article
+                                            <CatalogItemCard
                                                 id={`product-${product.id}`}
                                                 key={product.id}
-                                                className={`h-full flex flex-col overflow-hidden rounded-md border bg-card transition-shadow hover:shadow-md ${
-                                                    String(product.id) === targetProductId ? "ring-2 ring-primary border-primary" : "border-border"
-                                                }`}
-                                            >
-                                                <Link to={`/produtos/${product.id}`} className="aspect-square bg-secondary shrink-0 block">
-                                                    {product.image_url ? (
-                                                        <img src={product.image_url} alt={product.name} className="w-full h-full object-cover"/>
-                                                    ) : (
-                                                        <div className="w-full h-full flex items-center justify-center text-xs text-muted-foreground">Sem imagem</div>
-                                                    )}
-                                                </Link>
-                                                <div className="p-2.5 flex-1 flex flex-col gap-1">
-                                                    <Link to={`/produtos/${product.id}`} className="text-sm font-medium leading-snug line-clamp-2 min-h-[2.5rem] hover:text-primary">
-                                                        {product.name}
-                                                    </Link>
-                                                    <p className="text-xs text-muted-foreground line-clamp-1">
-                                                        {[product.egg_size, product.egg_color, product.kit_quantity ? `${product.kit_quantity} ovos` : null]
-                                                            .filter(Boolean)
-                                                            .join(" · ")}
-                                                    </p>
-                                                    <p className="text-lg font-semibold leading-none mt-auto pt-1">
-                                                        {formatBRL(product.one_time_price)}
-                                                    </p>
-                                                    <div className="pt-1">
-                                                    {isCustomer ? (
-                                                        <div className="flex gap-1">
-                                                            <Link to={`/produtos/${product.id}`} className="flex-1">
-                                                                <Button size="sm" variant="outline" className="w-full h-8 text-xs">
-                                                                    Ver
-                                                                </Button>
-                                                            </Link>
-                                                            <Button
-                                                                size="sm"
-                                                                className="h-8 px-2"
-                                                                onClick={() => handleAddToCart(product.id)}
-                                                                disabled={addCartItem.isPending || (product.allow_one_time_purchase === false && !(Number(product.one_time_price) > 0))}
-                                                                title="Adicionar ao carrinho"
-                                                            >
-                                                                <ShoppingCart className="w-4 h-4"/>
-                                                            </Button>
-                                                        </div>
-                                                    ) : isAuthenticated ? (
-                                                        <Link to="/producer/dashboard">
-                                                            <Button size="sm" variant="outline" className="w-full h-8 text-xs">Área do produtor</Button>
-                                                        </Link>
-                                                    ) : (
-                                                        <Link to="/login?mode=signup&type=customer">
-                                                            <Button size="sm" className="w-full h-8 text-xs">Comprar</Button>
-                                                        </Link>
-                                                    )}
-                                                    </div>
-                                                </div>
-                                            </article>
+                                                href={`/produtos/${product.id}`}
+                                                name={product.name}
+                                                imageUrl={product.image_url}
+                                                meta={[product.egg_size, product.egg_color, product.kit_quantity ? `${product.kit_quantity} ovos` : null]
+                                                    .filter(Boolean)
+                                                    .join(" · ")}
+                                                price={formatBRL(product.one_time_price)}
+                                                ratingAverage={product.rating_average}
+                                                ratingCount={product.rating_count}
+                                                highlighted={String(product.id) === targetProductId}
+                                                ctaLabel={isAuthenticated && !isCustomer ? "Área do produtor" : "Comprar"}
+                                                ctaVariant={isAuthenticated && !isCustomer ? "outline" : "default"}
+                                                ctaDisabled={addCartItem.isPending || (isCustomer && product.allow_one_time_purchase === false && !(Number(product.one_time_price) > 0))}
+                                                onCta={() => handleKitCta(product.id)}
+                                            />
                                         ))}
                                     </div>
                                     <CatalogPagination

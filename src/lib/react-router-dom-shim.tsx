@@ -1,7 +1,7 @@
 "use client";
 
 import LinkNext from "next/link";
-import { useParams as useNextParams, usePathname, useRouter } from "next/navigation";
+import { useParams as useNextParams, usePathname, useRouter, useSearchParams } from "next/navigation";
 import { ReactNode, useEffect } from "react";
 
 type LinkProps = {
@@ -34,8 +34,9 @@ export function useNavigate() {
 
 export function useLocation() {
   const pathname = usePathname();
-  const search = typeof window === "undefined" ? "" : window.location.search;
-  return { pathname, search };
+  const searchParams = useSearchParams();
+  const encoded = searchParams.toString();
+  return { pathname, search: encoded ? `?${encoded}` : "" };
 }
 
 export function useParams<T extends Record<string, string>>() {

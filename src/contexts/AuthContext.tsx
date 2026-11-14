@@ -53,6 +53,7 @@ interface AuthContextType {
         role: ProfileRole,
         farmName?: string,
         location?: string,
+        identity?: {documentType: "cpf" | "cnpj"; document: string; birthDate: string},
     ) => Promise<void>;
     logout: () => void;
     signOut: () => Promise<void>;
@@ -197,6 +198,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         role: ProfileRole,
         farmName?: string,
         location?: string,
+        identity?: {documentType: "cpf" | "cnpj"; document: string; birthDate: string},
     ) {
         const res = await fetch(`${API_URL}/auth/sign-up`, {
             method: "POST",
@@ -212,6 +214,9 @@ export function AuthProvider({children}: { children: ReactNode }) {
                 role,
                 farm_name: farmName,
                 location,
+                document_type: identity?.documentType,
+                document: identity?.document,
+                birth_date: identity?.birthDate,
             }),
         });
 

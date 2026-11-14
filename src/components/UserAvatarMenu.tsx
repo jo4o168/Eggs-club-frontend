@@ -35,12 +35,12 @@ export function UserAvatarMenu() {
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="h-auto rounded-full px-1.5 py-1 gap-3">
+                <Button variant="ghost" className="h-auto rounded-full px-1 sm:px-1.5 py-1 gap-2 sm:gap-3">
                     <div className="hidden sm:block text-right leading-tight">
                         <p className="text-sm font-medium">{displayName}</p>
                         <p className="text-xs text-muted-foreground font-normal">{roleLabel}</p>
                     </div>
-                    <span className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
+                    <span className="w-8 h-8 sm:w-10 sm:h-10 bg-primary/10 rounded-full flex items-center justify-center overflow-hidden shrink-0">
                         {avatarUrl ? (
                             <img src={avatarUrl} alt={displayName} className="w-full h-full object-cover"/>
                         ) : (

@@ -1,14 +1,19 @@
 "use client";
 
-import {useMemo} from "react";
+import {useMemo, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {Button} from "@/components/ui/button";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Badge} from "@/components/ui/badge";
+import {Textarea} from "@/components/ui/textarea";
 import {Link, useNavigate, useParams} from "react-router-dom";
 import {ArrowLeft, Calendar, Loader2, MapPin, Package, User} from "lucide-react";
-import {useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {OrderReview, useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
+import {useSubmitOrderReview} from "@/hooks/usePresentationExtras";
 import {ProducerOrderActions} from "@/components/ProducerOrderActions";
+import DemoPixPanel from "@/components/checkout/DemoPixPanel";
+import DemoNfeDialog from "@/components/checkout/DemoNfeDialog";
+import StarRating from "@/components/StarRating";
 import {useAuth} from "@/contexts/AuthContext";
 
 const statusLabel: Record<string, string> = {
@@ -169,6 +174,59 @@ export default function PedidoDetalhe() {
                     </Card>
                 </div>
 
+                {!viewerProducer && order.status !== "cancelled" ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Pix</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <DemoPixPanel orderId={order.id}/>
+                        </CardContent>
+                    </Card>
+                ) : null}
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-lg">Nota fiscal</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                        {order.nfe_access_key ? (
+                            <p className="text-sm font-mono break-all text-muted-foreground">
+                                Chave {order.nfe_access_key}
+                            </p>
+                        ) : (
+                            <p className="text-sm text-muted-foreground">
+                                NF-e de demonstração pode ser gerada a qualquer momento para a apresentação.
+                            </p>
+                        )}
+                        <DemoNfeDialog orderId={order.id} alreadyIssued={Boolean(order.nfe_access_key)}/>
+                    </CardContent>
+                </Card>
+
+                {!viewerProducer && order.status !== "cancelled" ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Avaliar kits</CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {(order.items ?? [])
+                                .filter((line) => line.product_id)
+                                .map((line) => {
+                                    const existing = (order.reviews ?? []).find((review) => review.product_id === line.product_id);
+                                    return (
+                                        <OrderItemReview
+                                            key={line.id}
+                                            orderId={order.id}
+                                            productId={line.product_id as number}
+                                            productName={line.product_name}
+                                            existing={existing}
+                                        />
+                                    );
+                                })}
+                        </CardContent>
+                    </Card>
+                ) : null}
+
                 {order.producer_message ? (
                     <Card className={order.status === "cancelled" ? "border-destructive/40" : "border-primary/30"}>
                         <CardHeader>
@@ -205,5 +263,45 @@ export default function PedidoDetalhe() {
                 ) : null}
             </div>
         </DashboardLayout>
+    );
+}
+
+function OrderItemReview({
+    orderId,
+    productId,
+    productName,
+    existing,
+}: {
+    orderId: number;
+    productId: number;
+    productName: string;
+    existing?: OrderReview;
+}) {
+    const submitReview = useSubmitOrderReview(orderId);
+    const [rating, setRating] = useState(existing?.rating ?? 0);
+    const [comment, setComment] = useState(existing?.comment ?? "");
+
+    return (
+        <div className="rounded-xl border border-border p-3 space-y-2">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium text-sm">{productName}</p>
+                <StarRating value={rating} onChange={setRating}/>
+            </div>
+            <Textarea
+                rows={2}
+                value={comment}
+                onChange={(event) => setComment(event.target.value)}
+                placeholder="Como estavam os ovos? (opcional)"
+            />
+            <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                disabled={rating < 1 || submitReview.isPending}
+                onClick={() => void submitReview.mutateAsync({product_id: productId, rating, comment: comment.trim() || null})}
+            >
+                {existing ? "Atualizar avaliação" : "Enviar avaliação"}
+            </Button>
+        </div>
     );
 }

@@ -20,7 +20,7 @@ export function ThemeToggle() {
     const mounted = useIsClient();
 
     if (!mounted) {
-        return <div className="h-10 w-10 shrink-0" aria-hidden/>;
+        return <div className="h-9 w-9 sm:h-10 sm:w-10 shrink-0" aria-hidden/>;
     }
 
     const isDark = resolvedTheme === "dark";
@@ -30,7 +30,7 @@ export function ThemeToggle() {
             type="button"
             variant="ghost"
             size="icon"
-            className="rounded-full shrink-0"
+            className="rounded-full shrink-0 h-9 w-9 sm:h-10 sm:w-10"
             onClick={() => setTheme(isDark ? "light" : "dark")}
             aria-label={isDark ? "Ativar modo claro" : "Ativar modo escuro"}
             title={isDark ? "Modo claro" : "Modo escuro"}

@@ -77,5 +77,4 @@ export function CatalogPagination({
     );
 }
 
-export const catalogGridClassName =
-    "grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2 items-stretch";
+export {catalogGridClassName} from "@/components/CatalogItemCard";

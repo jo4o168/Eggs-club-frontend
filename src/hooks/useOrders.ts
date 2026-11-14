@@ -37,10 +37,20 @@ function asOrderList(payload: unknown): Order[] {
     return [];
 }
 
+export interface OrderReview {
+    id: number;
+    product_id: number;
+    rating: number;
+    comment: string | null;
+}
+
 export interface OrderDetail extends Order {
     delivery_address?: string | null;
     notes?: string | null;
     items: OrderLineItem[];
+    reviews?: OrderReview[];
+    nfe_access_key?: string | null;
+    nfe_number?: number | null;
 }
 
 export const useProducerOrders = () => {

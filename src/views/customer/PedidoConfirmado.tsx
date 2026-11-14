@@ -1,6 +1,7 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
+import DemoPixPanel from "@/components/checkout/DemoPixPanel";
 import {Button} from "@/components/ui/button";
 import {Link, useLocation} from "react-router-dom";
 import {CheckCircle2, History, Package} from "lucide-react";
@@ -29,6 +30,18 @@ const PedidoConfirmado = () => {
                                     : "Recebemos a confirmação de entrega e pagamento. O produtor já pode preparar o kit."}
                             </p>
                         </div>
+
+                        {primaryOrderId ? (
+                            <div className="text-left rounded-xl border border-border p-4">
+                                <h2 className="font-display font-semibold mb-3">Pague com Pix</h2>
+                                <DemoPixPanel orderId={primaryOrderId}/>
+                                {orderIds.length > 1 ? (
+                                    <p className="text-xs text-muted-foreground mt-3">
+                                        Cada pedido de produtor tem o próprio QR Code na página do pedido.
+                                    </p>
+                                ) : null}
+                            </div>
+                        ) : null}
 
                         {subscriptionCount > 0 ? (
                             <p className="text-sm text-muted-foreground">

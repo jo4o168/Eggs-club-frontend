@@ -36,49 +36,49 @@ const Header = ({onMenuClick}: HeaderProps) => {
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/70">
-            <div className="container relative h-16 flex items-center">
-                <div className="flex items-center gap-2 z-10 min-w-0">
-                    {onMenuClick && (
-                        <button
-                            type="button"
-                            onClick={onMenuClick}
-                            className="lg:hidden p-2 hover:bg-secondary rounded-lg"
-                            aria-label="Abrir menu"
-                        >
-                            <Menu className="w-6 h-6"/>
-                        </button>
-                    )}
-                    {!isProducer && (
-                        <nav className="hidden lg:flex items-center gap-2" aria-label="Navegação principal">
-                            <Link to="/">
-                                <Button variant="ghost" size="sm" className={navLinkClass(isHomePage)}>
-                                    Início
-                                </Button>
-                            </Link>
-                            <Link to="/produtos">
-                                <Button variant="ghost" size="sm" className={navLinkClass(isKitsPage)}>
-                                    Kits de ovos
-                                </Button>
-                            </Link>
-                            <Link to="/planos">
-                                <Button variant="ghost" size="sm" className={navLinkClass(isPlansPage)}>
-                                    Planos de assinatura
-                                </Button>
-                            </Link>
-                        </nav>
-                    )}
-                </div>
+            <div className="container h-14 sm:h-16 flex items-center gap-2 sm:gap-3">
+                {onMenuClick && (
+                    <button
+                        type="button"
+                        onClick={onMenuClick}
+                        className="lg:hidden p-2 -ml-1 hover:bg-secondary rounded-lg shrink-0"
+                        aria-label="Abrir menu"
+                    >
+                        <Menu className="w-5 h-5 sm:w-6 sm:h-6"/>
+                    </button>
+                )}
 
-                <Link
-                    to={homeHref}
-                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-20"
-                >
+                <Link to={homeHref} className="shrink-0 min-w-0">
                     <BrandTitle />
                 </Link>
 
-                <div className="ml-auto flex items-center gap-2 z-10">
-                    {!isProducer && <HeaderSearch/>}
+                {!isProducer && (
+                    <nav className="hidden lg:flex items-center gap-1 shrink-0" aria-label="Navegação principal">
+                        <Link to="/">
+                            <Button variant="ghost" size="sm" className={navLinkClass(isHomePage)}>
+                                Início
+                            </Button>
+                        </Link>
+                        <Link to="/produtos">
+                            <Button variant="ghost" size="sm" className={navLinkClass(isKitsPage)}>
+                                Kits de ovos
+                            </Button>
+                        </Link>
+                        <Link to="/planos">
+                            <Button variant="ghost" size="sm" className={navLinkClass(isPlansPage)}>
+                                Planos de assinatura
+                            </Button>
+                        </Link>
+                    </nav>
+                )}
 
+                {!isProducer && (
+                    <div className="hidden md:block flex-1 min-w-0 max-w-xl">
+                        <HeaderSearch/>
+                    </div>
+                )}
+
+                <div className="ml-auto flex items-center gap-0.5 sm:gap-2 shrink-0">
                     <ThemeToggle/>
 
                     {!loading && (
@@ -87,7 +87,7 @@ const Header = ({onMenuClick}: HeaderProps) => {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    className="relative rounded-full"
+                                    className="relative rounded-full h-9 w-9 sm:h-10 sm:w-10"
                                     onClick={() => navigate(profile?.role === "customer" ? "/customer/carrinho" : "/login")}
                                 >
                                     <ShoppingCart className="w-4 h-4"/>
@@ -102,16 +102,25 @@ const Header = ({onMenuClick}: HeaderProps) => {
                                 <UserAvatarMenu/>
                             ) : (
                                 <Link to="/login">
-                                    <Button variant="hero" size="sm" className="px-5">Entrar</Button>
+                                    <Button variant="hero" size="sm" className="h-9 px-3 sm:px-5 text-sm">
+                                        Entrar
+                                    </Button>
                                 </Link>
                             )}
                         </>
                     )}
                 </div>
             </div>
+            {!isProducer && (
+                <div className="md:hidden border-t">
+                    <div className="container h-12 flex items-center">
+                        <HeaderSearch/>
+                    </div>
+                </div>
+            )}
             {!isProducer && !onMenuClick && (
                 <nav className="lg:hidden border-t" aria-label="Navegação principal">
-                    <div className="container flex items-center justify-center gap-1 py-2">
+                    <div className="container flex items-center justify-around sm:justify-center gap-1 py-1.5">
                         <Link to="/">
                             <Button variant="ghost" size="sm" className={navLinkClass(isHomePage)}>
                                 Início
