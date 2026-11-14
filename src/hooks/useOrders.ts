@@ -44,6 +44,29 @@ export interface OrderReview {
     comment: string | null;
 }
 
+export interface DeliveryIssueEvidence {
+    url: string;
+    mime?: string | null;
+    kind: "image" | "video";
+}
+
+export interface ReplacementStockLine {
+    product_id: number | null;
+    product_name: string;
+    needed: number;
+    available: number;
+}
+
+export interface DeliveryIssue {
+    reason: "broken" | "spoiled" | "missing" | "other";
+    requested_resolution?: "refund" | "replacement" | null;
+    description: string;
+    evidence?: DeliveryIssueEvidence[];
+    status: "open" | "refunded" | "replaced" | "rejected";
+    resolution_message?: string | null;
+    resolved_at?: string | null;
+}
+
 export interface OrderDetail extends Order {
     delivery_address?: string | null;
     notes?: string | null;
@@ -51,6 +74,14 @@ export interface OrderDetail extends Order {
     reviews?: OrderReview[];
     nfe_access_key?: string | null;
     nfe_number?: number | null;
+    can_confirm_delivery?: boolean;
+    can_review?: boolean;
+    can_report_issue?: boolean;
+    can_resolve_issue?: boolean;
+    can_replace?: boolean;
+    suggested_resolution?: "refunded" | "replaced" | null;
+    replacement_stock?: ReplacementStockLine[];
+    delivery_issue?: DeliveryIssue | null;
 }
 
 export const useProducerOrders = () => {

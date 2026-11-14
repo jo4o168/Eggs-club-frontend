@@ -32,6 +32,14 @@ export const API_FIELD_LABELS: Record<string, string> = {
     birth_date: "Data de nascimento",
     rating: "Nota",
     comment: "Comentário",
+    evidence: "Comprovante",
+    video: "Vídeo",
+    photos: "Fotos",
+    "photos.0": "Foto",
+    "photos.*": "Foto",
+    reason: "Motivo",
+    requested_resolution: "Como prefere resolver",
+    status: "Resolução",
 };
 
 function firstMessage(value: string | string[] | undefined): string {

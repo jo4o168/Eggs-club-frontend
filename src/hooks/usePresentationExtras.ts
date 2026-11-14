@@ -78,6 +78,62 @@ export const useProductReviews = (productId: number | undefined) =>
         enabled: !!productId && productId > 0,
     });
 
+export const useConfirmOrderDelivery = (orderId: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: () => api.post(`/orders/${orderId}/confirm-delivery`, {}),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ["order", orderId]});
+            queryClient.invalidateQueries({queryKey: ["customer-orders"]});
+            toast({title: "Recebimento confirmado. Agora você pode avaliar ou registrar um problema."});
+        },
+        onError: (error: Error) => {
+            toast({title: "Não foi possível confirmar a entrega", description: error.message, variant: "destructive"});
+        },
+    });
+};
+
+export const useReportDeliveryIssue = (orderId: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: {reason: string; description: string; requested_resolution: "refund" | "replacement"; video: File; photos: File[]}) => {
+            const form = new FormData();
+            form.append("reason", payload.reason);
+            form.append("description", payload.description);
+            form.append("requested_resolution", payload.requested_resolution);
+            form.append("video", payload.video);
+            payload.photos.forEach((file) => form.append("photos[]", file));
+            return api.postForm(`/orders/${orderId}/delivery-issues`, form);
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ["order", orderId]});
+            toast({title: "Chamado aberto. O produtor confirma o estorno ou o reenvio."});
+        },
+        onError: (error: Error) => {
+            toast({title: "Não foi possível abrir o chamado", description: error.message, variant: "destructive"});
+        },
+    });
+};
+
+export const useResolveDeliveryIssue = (orderId: number) => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (payload: {status: "refunded" | "replaced" | "rejected"; resolution_message: string}) =>
+            api.put(`/orders/${orderId}/delivery-issues`, payload),
+        onSuccess: () => {
+            queryClient.invalidateQueries({queryKey: ["order", orderId]});
+            queryClient.invalidateQueries({queryKey: ["producer-orders"]});
+            toast({title: "Pós-compra atualizado"});
+        },
+        onError: (error: Error) => {
+            toast({title: "Não foi possível resolver o chamado", description: error.message, variant: "destructive"});
+        },
+    });
+};
+
 export const useSubmitOrderReview = (orderId: number) => {
     const queryClient = useQueryClient();
 

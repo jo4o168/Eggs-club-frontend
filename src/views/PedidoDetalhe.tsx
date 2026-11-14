@@ -11,6 +11,7 @@ import {ArrowLeft, Calendar, Loader2, MapPin, Package, User} from "lucide-react"
 import {OrderReview, useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
 import {useSubmitOrderReview} from "@/hooks/usePresentationExtras";
 import {ProducerOrderActions} from "@/components/ProducerOrderActions";
+import OrderAfterSale from "@/components/order/OrderAfterSale";
 import DemoPixPanel from "@/components/checkout/DemoPixPanel";
 import DemoNfeDialog from "@/components/checkout/DemoNfeDialog";
 import StarRating from "@/components/StarRating";
@@ -203,12 +204,17 @@ export default function PedidoDetalhe() {
                     </CardContent>
                 </Card>
 
-                {!viewerProducer && order.status !== "cancelled" ? (
+                <OrderAfterSale order={order} viewerProducer={viewerProducer}/>
+
+                {!viewerProducer && order.can_review ? (
                     <Card>
                         <CardHeader>
                             <CardTitle className="text-lg">Avaliar kits</CardTitle>
                         </CardHeader>
                         <CardContent className="space-y-4">
+                            <p className="text-sm text-muted-foreground">
+                                Avalie só depois de conferir os ovos. Se chegaram quebrados ou estragados, abra o chamado de pós-compra acima.
+                            </p>
                             {(order.items ?? [])
                                 .filter((line) => line.product_id)
                                 .map((line) => {
@@ -223,6 +229,19 @@ export default function PedidoDetalhe() {
                                         />
                                     );
                                 })}
+                        </CardContent>
+                    </Card>
+                ) : null}
+
+                {!viewerProducer && !order.can_review && order.status !== "cancelled" && !order.can_confirm_delivery ? (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-lg">Avaliar kits</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground">
+                                A avaliação abre quando o pedido estiver entregue. Assim a nota reflete o que chegou, não só a compra.
+                            </p>
                         </CardContent>
                     </Card>
                 ) : null}
