@@ -9,8 +9,7 @@ import {toast} from "@/hooks/use-toast";
 import {useAuth} from "@/contexts/AuthContext";
 import {Loader2} from "lucide-react";
 import {Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,} from "@/components/ui/dialog";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+import {getPublicApiUrl} from "@/lib/apiBase";
 
 const ClienteConfiguracoes = () => {
     const {user} = useAuth();
@@ -48,7 +47,7 @@ const ClienteConfiguracoes = () => {
         setIsChangingPassword(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API_URL}/user/password`, {
+            const res = await fetch(`${getPublicApiUrl()}/user/password`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",
@@ -86,7 +85,7 @@ const ClienteConfiguracoes = () => {
         setIsChangingEmail(true);
         try {
             const token = localStorage.getItem("token");
-            const res = await fetch(`${API_URL}/user/email`, {
+            const res = await fetch(`${getPublicApiUrl()}/user/email`, {
                 method: "PUT",
                 headers: {
                     "Content-Type": "application/json",

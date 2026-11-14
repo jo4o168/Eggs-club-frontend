@@ -1,6 +1,7 @@
 import {createContext, ReactNode, useContext, useEffect, useRef, useState} from "react";
 import {api, ApiRequestError} from "@/api/http";
 import {API_FIELD_LABELS, formatLaravelValidationMessage} from "@/lib/validationMessages";
+import {getPublicApiUrl} from "@/lib/apiBase";
 
 // Espelha o enum do Laravel
 export enum ProfileRole {
@@ -61,7 +62,6 @@ interface AuthContextType {
     isClient: () => boolean;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
 const INACTIVITY_TIMEOUT_MS = 5 * 60 * 1000;
 
 async function parseApiResponse(res: Response) {
@@ -73,7 +73,7 @@ async function parseApiResponse(res: Response) {
 
     const text = await res.text();
     throw new Error(
-        `Resposta inválida da API (${res.status}). Verifique NEXT_PUBLIC_API_URL e backend. Trecho: ${text.slice(0, 80)}`
+        `Resposta inválida da API (${res.status}). Verifique se o backend está no ar. Trecho: ${text.slice(0, 80)}`
     );
 }
 
@@ -140,7 +140,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
     }
 
     async function signIn(email: string, password: string) {
-        const res = await fetch(`${API_URL}/auth/sign-in`, {
+        const res = await fetch(`${getPublicApiUrl()}/auth/sign-in`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -200,7 +200,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         location?: string,
         identity?: {documentType: "cpf" | "cnpj"; document: string; birthDate: string},
     ) {
-        const res = await fetch(`${API_URL}/auth/sign-up`, {
+        const res = await fetch(`${getPublicApiUrl()}/auth/sign-up`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

@@ -10,6 +10,7 @@ import {Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle} fro
 import {Film, ImageIcon, PackageCheck, Play, ShieldAlert} from "lucide-react";
 import type {DeliveryIssueEvidence, OrderDetail} from "@/hooks/useOrders";
 import {useConfirmOrderDelivery, useReportDeliveryIssue, useResolveDeliveryIssue} from "@/hooks/usePresentationExtras";
+import {normalizePublicAssetUrl} from "@/lib/apiBase";
 
 const reasonLabel: Record<string, string> = {
     broken: "Ovos quebrados",
@@ -60,35 +61,8 @@ function FileChip({file, kind}: {file: File; kind: "video" | "photo"}) {
     );
 }
 
-function getApiBaseUrl() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
-    return apiUrl.replace(/\/api\/?$/, "");
-}
-
 function normalizeMediaUrl(url?: string | null) {
-    if (!url) return null;
-    const apiBaseUrl = getApiBaseUrl();
-    const apiBase = new URL(apiBaseUrl);
-
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-        try {
-            const current = new URL(url);
-            const hasDefaultLocalhostOrigin =
-                current.hostname === "localhost" &&
-                (current.port === "" || current.port === "80");
-            if (hasDefaultLocalhostOrigin) {
-                current.protocol = apiBase.protocol;
-                current.host = apiBase.host;
-                return current.toString();
-            }
-        } catch {
-            // no-op
-        }
-        return url;
-    }
-
-    if (url.startsWith("/")) return `${apiBaseUrl}${url}`;
-    return `${apiBaseUrl}/${url}`;
+    return normalizePublicAssetUrl(url);
 }
 
 function EvidenceGallery({items}: {items: DeliveryIssueEvidence[]}) {

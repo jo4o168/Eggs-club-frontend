@@ -1,10 +1,9 @@
 import type {ApiResponse, LoginRequest, LoginResponse} from "../models/rest/auth";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+import {getPublicApiUrl} from "@/lib/apiBase";
 
 export class AuthService {
     async login(credentials: LoginRequest): Promise<ApiResponse<LoginResponse>> {
-        const res = await fetch(`${API_URL}/auth/sign-in`, {
+        const res = await fetch(`${getPublicApiUrl()}/auth/sign-in`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",

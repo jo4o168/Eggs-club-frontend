@@ -1,6 +1,5 @@
 import {API_FIELD_LABELS, formatLaravelValidationMessage} from "@/lib/validationMessages";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+import {getPublicApiUrl} from "@/lib/apiBase";
 
 function getToken() {
     return localStorage.getItem("token");
@@ -29,7 +28,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     const isFormData = options.body instanceof FormData;
     let res: Response;
     try {
-        res = await fetch(`${API_URL}${path}`, {
+        res = await fetch(`${getPublicApiUrl()}${path}`, {
             ...options,
             headers: {
                 "Accept": "application/json",
@@ -39,7 +38,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
             },
         });
     } catch {
-        throw new Error(`Falha de rede ao acessar ${API_URL}${path}. Verifique se o backend está rodando e CORS liberado.`);
+        throw new Error(`Falha de rede ao acessar ${getPublicApiUrl()}${path}. Verifique se o backend está rodando.`);
     }
 
     if (res.status === 204) {

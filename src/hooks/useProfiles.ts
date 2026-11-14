@@ -2,6 +2,7 @@ import {useMutation, useQuery, useQueryClient} from '@tanstack/react-query';
 import {useAuth} from '@/contexts/AuthContext';
 import {toast} from '@/hooks/use-toast';
 import {api} from '@/api/http';
+import {normalizePublicAssetUrl} from '@/lib/apiBase';
 
 export interface Profile {
     id: number;
@@ -32,44 +33,8 @@ interface AvatarUploadResponse {
     avatar_url: string;
 }
 
-function getApiBaseUrl() {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api';
-    return apiUrl.replace(/\/api\/?$/, '');
-}
-
 function normalizeAvatarUrl(url?: string | null) {
-    if (!url) return null;
-    if (url.startsWith('data:')) {
-        return url;
-    }
-
-    const apiBaseUrl = getApiBaseUrl();
-    const apiBase = new URL(apiBaseUrl);
-
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-        try {
-            const current = new URL(url);
-            const hasDefaultLocalhostOrigin =
-                current.hostname === 'localhost' &&
-                (current.port === '' || current.port === '80');
-
-            if (hasDefaultLocalhostOrigin) {
-                current.protocol = apiBase.protocol;
-                current.host = apiBase.host;
-                return current.toString();
-            }
-        } catch {
-            // Falls back to raw value if URL parsing fails.
-        }
-
-        return url;
-    }
-
-    if (url.startsWith('/')) {
-        return `${apiBaseUrl}${url}`;
-    }
-
-    return `${apiBaseUrl}/${url}`;
+    return normalizePublicAssetUrl(url);
 }
 
 export const useProfile = () => {

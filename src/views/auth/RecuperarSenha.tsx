@@ -9,8 +9,7 @@ import {Input} from "@/components/ui/input";
 import {Label} from "@/components/ui/label";
 import {Loader2} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api";
+import {getPublicApiUrl} from "@/lib/apiBase";
 
 export default function RecuperarSenha() {
     const [email, setEmail] = useState("");
@@ -20,7 +19,7 @@ export default function RecuperarSenha() {
         e.preventDefault();
         setLoading(true);
         try {
-            const res = await fetch(`${API_URL}/auth/forgot-password`, {
+            const res = await fetch(`${getPublicApiUrl()}/auth/forgot-password`, {
                 method: "POST",
                 headers: {"Content-Type": "application/json", Accept: "application/json"},
                 body: JSON.stringify({email}),
