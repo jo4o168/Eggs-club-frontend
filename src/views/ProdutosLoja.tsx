@@ -14,6 +14,7 @@ import {CatalogPagination, catalogGridClassName} from "@/components/CatalogPagin
 import CatalogItemCard from "@/components/CatalogItemCard";
 import {CATALOG_PAGE_SIZE, pageContainingIndex, paginate} from "@/utils/paginate";
 import {formatBRL} from "@/utils/money";
+import {allowsOneTimePurchase} from "@/utils/productPurchase";
 
 const ProdutosLoja = () => {
     const {profile} = useAuth();
@@ -25,7 +26,7 @@ const ProdutosLoja = () => {
     const params = new URLSearchParams(location.search);
     const query = (params.get("q") ?? "").toLowerCase();
     const targetProductId = params.get("product");
-    const {data: products = []} = usePublicProducts();
+    const {data: products = []} = usePublicProducts(undefined, "one_time");
     const {data: producers = []} = usePublicProducers();
 
     const [selectedSizes, setSelectedSizes] = useState<string[]>([]);
@@ -34,10 +35,7 @@ const ProdutosLoja = () => {
     const [page, setPage] = useState(1);
 
     const oneTimeKits = useMemo(
-        () =>
-            products.filter(
-                (product) => product.allow_one_time_purchase !== false || Number(product.one_time_price) > 0,
-            ),
+        () => products.filter((product) => allowsOneTimePurchase(product)),
         [products],
     );
 
@@ -104,7 +102,12 @@ const ProdutosLoja = () => {
     }, [targetProductId, catalog.items]);
 
     const handleKitCta = (productId: number) => {
+        const product = products.find((item) => item.id === productId);
         if (isCustomer) {
+            if (!allowsOneTimePurchase(product)) {
+                navigate(`/produtos/${productId}`);
+                return;
+            }
             void addCartItem
                 .mutateAsync({
                     product_id: productId,
@@ -227,7 +230,7 @@ const ProdutosLoja = () => {
                                                 highlighted={String(product.id) === targetProductId}
                                                 ctaLabel={isAuthenticated && !isCustomer ? "Área do produtor" : "Comprar"}
                                                 ctaVariant={isAuthenticated && !isCustomer ? "outline" : "default"}
-                                                ctaDisabled={addCartItem.isPending || (isCustomer && product.allow_one_time_purchase === false && !(Number(product.one_time_price) > 0))}
+                                                ctaDisabled={addCartItem.isPending || (isCustomer && !allowsOneTimePurchase(product))}
                                                 onCta={() => handleKitCta(product.id)}
                                             />
                                         ))}

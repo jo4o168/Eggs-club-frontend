@@ -87,16 +87,33 @@ export const usePublicPlans = (producerId?: string) =>
     },
   });
 
-export const usePublicProducts = (producerId?: string) =>
+export const usePublicProducts = (producerId?: string, sale?: "one_time") =>
   useQuery({
-    queryKey: ["public-products", producerId],
+    queryKey: ["public-products", producerId, sale],
     queryFn: async () => {
+      const params = new URLSearchParams();
+      if (producerId) params.set("producer_id", producerId);
+      if (sale) params.set("sale", sale);
+      const query = params.toString();
       const products = await api.get<PublicProduct[]>(
-        producerId ? `/public/products?producer_id=${producerId}` : "/public/products",
+        query ? `/public/products?${query}` : "/public/products",
       );
       return products.map((product) => ({
         ...product,
         image_url: normalizeImageUrl(product.image_url),
       }));
     },
+  });
+
+export const usePublicProduct = (id?: number) =>
+  useQuery({
+    queryKey: ["public-product", id],
+    queryFn: async () => {
+      const product = await api.get<PublicProduct>(`/public/products/${id}`);
+      return {
+        ...product,
+        image_url: normalizeImageUrl(product.image_url),
+      };
+    },
+    enabled: !!id && id > 0,
   });

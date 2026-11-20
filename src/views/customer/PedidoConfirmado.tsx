@@ -1,10 +1,11 @@
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import CheckoutStepper from "@/components/checkout/CheckoutStepper";
-import DemoPixPanel from "@/components/checkout/DemoPixPanel";
+import OrderPaymentPanel from "@/components/checkout/OrderPaymentPanel";
 import {Button} from "@/components/ui/button";
 import {Link, useLocation} from "react-router-dom";
-import {CheckCircle2, History, Package} from "lucide-react";
+import {CheckCircle2, History, Loader2, Package} from "lucide-react";
+import {useOrder} from "@/hooks/useOrders";
 
 const PedidoConfirmado = () => {
     const location = useLocation();
@@ -12,6 +13,7 @@ const PedidoConfirmado = () => {
     const orderIds = (params.get("orders") ?? "").split(",").map((value) => Number(value)).filter((id) => id > 0);
     const subscriptionCount = (params.get("subs") ?? "").split(",").filter(Boolean).length;
     const primaryOrderId = orderIds[0];
+    const {data: order, isLoading: orderLoading} = useOrder(primaryOrderId);
 
     return (
         <div className="min-h-screen flex flex-col">
@@ -31,16 +33,21 @@ const PedidoConfirmado = () => {
                             </p>
                         </div>
 
-                        {primaryOrderId ? (
-                            <div className="text-left rounded-xl border border-border p-4">
-                                <h2 className="font-display font-semibold mb-3">Pague com Pix</h2>
-                                <DemoPixPanel orderId={primaryOrderId}/>
-                                {orderIds.length > 1 ? (
-                                    <p className="text-xs text-muted-foreground mt-3">
-                                        Cada pedido de produtor tem o próprio QR Code na página do pedido.
-                                    </p>
-                                ) : null}
+                        {primaryOrderId && orderLoading ? (
+                            <div className="flex items-center justify-center py-6 text-muted-foreground">
+                                <Loader2 className="h-5 w-5 animate-spin mr-2"/>
+                                Carregando forma de pagamento...
                             </div>
+                        ) : primaryOrderId ? (
+                            <OrderPaymentPanel
+                                orderId={primaryOrderId}
+                                payment={order?.payment}
+                                extraNote={
+                                    orderIds.length > 1
+                                        ? "Cada pedido de produtor mostra a própria forma de pagamento na página do pedido."
+                                        : undefined
+                                }
+                            />
                         ) : null}
 
                         {subscriptionCount > 0 ? (

@@ -67,11 +67,18 @@ export interface DeliveryIssue {
     resolved_at?: string | null;
 }
 
+export interface OrderPayment {
+    type: "credit_card" | "debit_card" | "pix" | string;
+    last_four?: string | null;
+    card_brand?: string | null;
+}
+
 export interface OrderDetail extends Order {
     delivery_address?: string | null;
     notes?: string | null;
     items: OrderLineItem[];
     reviews?: OrderReview[];
+    payment?: OrderPayment | null;
     nfe_access_key?: string | null;
     nfe_number?: number | null;
     can_confirm_delivery?: boolean;

@@ -4,6 +4,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
+import PasswordInput from "@/components/PasswordInput";
 import {Label} from "@/components/ui/label";
 import {Tabs, TabsList, TabsTrigger} from "@/components/ui/tabs";
 import {useAuth, ProfileRole} from "@/contexts/AuthContext";
@@ -280,11 +281,11 @@ const Login = () => {
 
                             <div className="space-y-2">
                                 <Label htmlFor="password">Senha</Label>
-                                <Input
+                                <PasswordInput
                                     id="password"
-                                    type="password"
                                     placeholder="••••••••"
                                     value={formData.password}
+                                    autoComplete={isLogin ? "current-password" : "new-password"}
                                     onChange={(e) => {
                                         setFormData({...formData, password: e.target.value});
                                         clearSignupError("password");
@@ -306,11 +307,11 @@ const Login = () => {
                                         </p>
                                         <div className="space-y-2 pt-1">
                                             <Label htmlFor="passwordConfirmation">Confirmar senha</Label>
-                                            <Input
+                                            <PasswordInput
                                                 id="passwordConfirmation"
-                                                type="password"
                                                 placeholder="Repita a senha"
                                                 value={formData.passwordConfirmation}
+                                                autoComplete="new-password"
                                                 onChange={(e) => {
                                                     setFormData({...formData, passwordConfirmation: e.target.value});
                                                     clearSignupError("passwordConfirm");

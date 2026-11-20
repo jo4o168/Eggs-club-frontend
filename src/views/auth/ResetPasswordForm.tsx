@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {Button} from "@/components/ui/button";
 import {Input} from "@/components/ui/input";
+import PasswordInput from "@/components/PasswordInput";
 import {Label} from "@/components/ui/label";
 import {Loader2} from "lucide-react";
 import {toast} from "@/hooks/use-toast";
@@ -78,9 +79,9 @@ export default function ResetPasswordForm() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password">Nova senha</Label>
-                                <Input
+                                <PasswordInput
                                     id="password"
-                                    type="password"
+                                    autoComplete="new-password"
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     required
@@ -90,9 +91,9 @@ export default function ResetPasswordForm() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="password2">Confirmar senha</Label>
-                                <Input
+                                <PasswordInput
                                     id="password2"
-                                    type="password"
+                                    autoComplete="new-password"
                                     value={passwordConfirmation}
                                     onChange={(e) => setPasswordConfirmation(e.target.value)}
                                     required

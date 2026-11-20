@@ -47,13 +47,13 @@ export interface ProductReview {
     created_at?: string;
 }
 
-export const useOrderPix = (orderId: number | undefined) => {
+export const useOrderPix = (orderId: number | undefined, enabled = true) => {
     const {user} = useAuth();
 
     return useQuery({
         queryKey: ["order-pix", orderId, user?.id],
         queryFn: () => api.get<OrderPix>(`/orders/${orderId}/pix`),
-        enabled: !!user && !!orderId && orderId > 0,
+        enabled: enabled && !!user && !!orderId && orderId > 0,
     });
 };
 

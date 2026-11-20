@@ -12,8 +12,10 @@ import {OrderReview, useOrder, useUpdateOrderStatus} from "@/hooks/useOrders";
 import {useSubmitOrderReview} from "@/hooks/usePresentationExtras";
 import {ProducerOrderActions} from "@/components/ProducerOrderActions";
 import OrderAfterSale from "@/components/order/OrderAfterSale";
-import DemoPixPanel from "@/components/checkout/DemoPixPanel";
 import DemoNfeDialog from "@/components/checkout/DemoNfeDialog";
+import DemoPixPanel from "@/components/checkout/DemoPixPanel";
+import DemoCardPaidPanel from "@/components/checkout/DemoCardPaidPanel";
+import {paymentTypeLabel} from "@/utils/paymentLabels";
 import StarRating from "@/components/StarRating";
 import {useAuth} from "@/contexts/AuthContext";
 
@@ -175,13 +177,33 @@ export default function PedidoDetalhe() {
                     </Card>
                 </div>
 
-                {!viewerProducer && order.status !== "cancelled" ? (
+                {order.status !== "cancelled" ? (
                     <Card>
                         <CardHeader>
-                            <CardTitle className="text-lg">Pix</CardTitle>
+                            <CardTitle className="text-lg">
+                                {order.payment?.type === "pix"
+                                    ? "Pix"
+                                    : order.payment?.type === "credit_card" || order.payment?.type === "debit_card"
+                                        ? "Pagamento no cartão"
+                                        : "Pagamento"}
+                            </CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <DemoPixPanel orderId={order.id}/>
+                            {!viewerProducer && order.payment?.type === "pix" ? (
+                                <DemoPixPanel orderId={order.id}/>
+                            ) : order.payment?.type === "credit_card" || order.payment?.type === "debit_card" ? (
+                                <DemoCardPaidPanel
+                                    type={order.payment.type}
+                                    last_four={order.payment.last_four}
+                                    card_brand={order.payment.card_brand}
+                                />
+                            ) : (
+                                <p className="text-sm text-muted-foreground">
+                                    {order.payment?.type
+                                        ? `${paymentTypeLabel(order.payment.type)} registrado neste pedido.`
+                                        : "Forma de pagamento não informada neste pedido."}
+                                </p>
+                            )}
                         </CardContent>
                     </Card>
                 ) : null}

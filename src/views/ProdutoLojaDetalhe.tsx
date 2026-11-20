@@ -3,7 +3,8 @@ import Footer from "@/components/Footer";
 import {Button} from "@/components/ui/button";
 import {Link, useLocation, useNavigate} from "react-router-dom";
 import {useEffect, useMemo, useState} from "react";
-import {usePublicPlans, usePublicProducer, usePublicProducts} from "@/hooks/usePublicCatalog";
+import {usePublicPlans, usePublicProducer, usePublicProduct} from "@/hooks/usePublicCatalog";
+import {allowsOneTimePurchase} from "@/utils/productPurchase";
 import {CartPurchaseMode, useAddCartItem} from "@/hooks/useCart";
 import {toast} from "@/hooks/use-toast";
 import {ToastAction} from "@/components/ui/toast";
@@ -32,8 +33,7 @@ const ProdutoLojaDetalhe = () => {
     const isCustomer = profile?.role === "customer";
     const productId = Number(location.pathname.split("/").pop() ?? 0);
 
-    const {data: products = [], isLoading} = usePublicProducts();
-    const product = useMemo(() => products.find((item) => item.id === productId), [products, productId]);
+    const {data: product, isLoading} = usePublicProduct(Number.isFinite(productId) ? productId : undefined);
     const {data: producer} = usePublicProducer(product ? String(product.producer_id) : undefined);
     const {data: allPlans = []} = usePublicPlans(product ? String(product.producer_id) : undefined);
     const plans = useMemo(
@@ -41,7 +41,7 @@ const ProdutoLojaDetalhe = () => {
         [allPlans, productId],
     );
 
-    const allowOneTime = product?.allow_one_time_purchase !== false;
+    const allowOneTime = allowsOneTimePurchase(product);
     const [mode, setMode] = useState<CartPurchaseMode>("one_time");
     const [quantity, setQuantity] = useState(1);
     const [selectedPlanId, setSelectedPlanId] = useState<string>("");
