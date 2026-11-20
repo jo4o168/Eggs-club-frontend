@@ -133,12 +133,13 @@ export const useUpdateOrderStatus = () => {
             queryClient.invalidateQueries({queryKey: ['customer-orders']});
             queryClient.invalidateQueries({queryKey: ['producer-stats']});
             queryClient.invalidateQueries({queryKey: ['order', variables.id]});
-            const title =
-                variables.status === "cancelled"
-                    ? "Pedido cancelado. O cliente foi informado e o valor será estornado."
-                    : variables.status === "confirmed"
-                        ? "Pedido confirmado. O cliente foi avisado que está em preparação."
-                        : "Status do pedido atualizado!";
+            const title = ({
+                cancelled: "Pedido cancelado. O cliente foi informado e o valor será estornado.",
+                confirmed: "Pedido confirmado. O cliente foi avisado que está em preparação.",
+                preparing: "Pedido em preparo. O cliente foi avisado.",
+                shipped: "Pedido enviado. O cliente foi avisado.",
+                delivered: "Pedido marcado como entregue.",
+            } as Record<string, string>)[variables.status] ?? "Status do pedido atualizado!";
             toast({title});
         },
         onError: (error: Error) => {
