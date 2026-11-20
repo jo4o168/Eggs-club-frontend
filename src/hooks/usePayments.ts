@@ -50,7 +50,7 @@ export const useCreatePaymentMethod = () => {
             expiration_month?: number;
             expiration_year?: number;
             is_default?: boolean;
-        }) => api.post('/payment-methods', {
+        }) => api.post<PaymentMethod>('/payment-methods', {
             type: payload.type,
             last_four: payload.card_last_four ?? null,
             card_brand: payload.card_brand ?? null,

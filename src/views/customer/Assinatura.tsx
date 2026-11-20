@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import {Card, CardContent, CardHeader, CardTitle} from "@/components/ui/card";
 import {Button} from "@/components/ui/button";
@@ -23,6 +23,10 @@ import {
 import {usePublicPlans, usePublicProducers, usePublicProducts} from "@/hooks/usePublicCatalog";
 import {useCreateOrder} from "@/hooks/useOrders";
 import {usePaymentMethods} from "@/hooks/usePayments";
+import AddPaymentMethodDialog, {type PaymentType} from "@/components/checkout/AddPaymentMethodDialog";
+import {paymentMethodLabel} from "@/utils/paymentLabels";
+
+const CREDIT_ONLY: PaymentType[] = ["credit_card"];
 import {addWeeks, format} from "date-fns";
 import {ptBR} from "date-fns/locale";
 
@@ -48,6 +52,11 @@ const ClienteAssinatura = () => {
     const createSubscription = useCreateSubscription();
     const createOrder = useCreateOrder();
     const {data: paymentMethods = []} = usePaymentMethods();
+    const creditCards = useMemo(
+        () => paymentMethods.filter((method) => method.type === "credit_card"),
+        [paymentMethods],
+    );
+    const [addCardOpen, setAddCardOpen] = useState(false);
 
     const currentSubscription =
         selectedSubscription != null
@@ -61,9 +70,9 @@ const ClienteAssinatura = () => {
             return;
         }
         const preferred =
-            paymentMethods.find((p) => p.is_default)?.id ?? paymentMethods[0]?.id ?? null;
+            creditCards.find((p) => p.is_default)?.id ?? creditCards[0]?.id ?? null;
         setNewSubPaymentMethodId(preferred);
-    }, [newSubscriptionDialogOpen, purchaseMode, paymentMethods]);
+    }, [newSubscriptionDialogOpen, purchaseMode, creditCards]);
 
     const handlePause = async () => {
         if (!currentSubscription) return;
@@ -143,15 +152,19 @@ const ClienteAssinatura = () => {
                     return;
                 }
 
-                if (paymentMethods.length > 0 && !newSubPaymentMethodId) {
-                    toast({title: "Selecione um método de pagamento", variant: "destructive"});
+                if (!newSubPaymentMethodId) {
+                    toast({
+                        title: "Cartão de crédito obrigatório",
+                        description: "Planos de assinatura só aceitam cartão de crédito.",
+                        variant: "destructive",
+                    });
                     return;
                 }
 
                 await createSubscription.mutateAsync({
                     planId: selectedPlanId,
                     producerId: selectedProducerId,
-                    payment_method_id: newSubPaymentMethodId ?? undefined,
+                    payment_method_id: newSubPaymentMethodId,
                 });
             } else {
                 if (!selectedProductId) {
@@ -300,27 +313,33 @@ const ClienteAssinatura = () => {
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            {paymentMethods.length > 0 ? (
-                                                <div className="space-y-2">
-                                                    <Label>Método de pagamento</Label>
+                                            <div className="space-y-2">
+                                                <Label>Cartão de crédito</Label>
+                                                {creditCards.length > 0 ? (
                                                     <Select
                                                         value={newSubPaymentMethodId ? String(newSubPaymentMethodId) : ""}
                                                         onValueChange={(v) => setNewSubPaymentMethodId(Number(v))}
                                                     >
                                                         <SelectTrigger>
-                                                            <SelectValue placeholder="Selecione"/>
+                                                            <SelectValue placeholder="Selecione o cartão"/>
                                                         </SelectTrigger>
                                                         <SelectContent>
-                                                            {paymentMethods.map((pm) => (
+                                                            {creditCards.map((pm) => (
                                                                 <SelectItem key={pm.id} value={String(pm.id)}>
-                                                                    {pm.type}
-                                                                    {pm.last_four ? ` ·••• ${pm.last_four}` : ""}
+                                                                    {paymentMethodLabel(pm)}
                                                                 </SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
-                                                </div>
-                                            ) : null}
+                                                ) : (
+                                                    <p className="text-sm text-muted-foreground">
+                                                        Assinatura só aceita cartão de crédito.
+                                                    </p>
+                                                )}
+                                                <Button type="button" variant="outline" size="sm" onClick={() => setAddCardOpen(true)}>
+                                                    {creditCards.length > 0 ? "Usar outro cartão" : "Cadastrar cartão de crédito"}
+                                                </Button>
+                                            </div>
                                         </>
                                     ) : (
                                         <>
@@ -657,6 +676,14 @@ const ClienteAssinatura = () => {
                     ))
                 )}
             </div>
+            <AddPaymentMethodDialog
+                open={addCardOpen}
+                onOpenChange={setAddCardOpen}
+                initialType="credit_card"
+                allowedTypes={CREDIT_ONLY}
+                makeDefault={creditCards.length === 0}
+                onCreated={(method) => setNewSubPaymentMethodId(method.id)}
+            />
         </DashboardLayout>
     );
 };

@@ -20,7 +20,11 @@ import {maskCep, maskPhone, onlyDigits} from "@/utils/inputMasks";
 import {identityIsComplete} from "@/utils/brazilianDocument";
 import {normalizeUfToSigla} from "@/utils/brazilStates";
 import {Alert, AlertDescription, AlertTitle} from "@/components/ui/alert";
+import {paymentMethodLabel} from "@/utils/paymentLabels";
 import {Loader2, MapPin, MessageSquare, ShieldCheck} from "lucide-react";
+import type {PaymentType} from "@/components/checkout/AddPaymentMethodDialog";
+
+const SUBSCRIPTION_PAYMENT_TYPES: PaymentType[] = ["credit_card"];
 
 const CheckoutCliente = () => {
     const navigate = useNavigate();
@@ -61,16 +65,24 @@ const CheckoutCliente = () => {
         setHydrated(true);
     }, [profile, hydrated]);
 
+    const hasSubscription = items.some((item) => item.purchase_mode === "subscription");
+    const eligiblePayments = useMemo(
+        () => (hasSubscription
+            ? paymentMethods.filter((method) => method.type === "credit_card")
+            : paymentMethods),
+        [hasSubscription, paymentMethods],
+    );
+
     useEffect(() => {
-        if (paymentMethods.length === 0) {
+        if (eligiblePayments.length === 0) {
             setPaymentMethodId(null);
             return;
         }
         setPaymentMethodId((current) => {
-            if (current && paymentMethods.some((method) => method.id === current)) return current;
-            return paymentMethods.find((method) => method.is_default)?.id ?? paymentMethods[0].id;
+            if (current && eligiblePayments.some((method) => method.id === current)) return current;
+            return eligiblePayments.find((method) => method.is_default)?.id ?? eligiblePayments[0].id;
         });
-    }, [paymentMethods]);
+    }, [eligiblePayments]);
 
     const addressParts = useMemo(
         () => ({
@@ -94,6 +106,7 @@ const CheckoutCliente = () => {
         birthDate: (profile?.birth_date ?? "").slice(0, 10),
     });
     const missingPlan = items.some((item) => item.purchase_mode === "subscription" && !item.subscription_plan_id);
+    const selectedPayment = paymentMethods.find((method) => method.id === paymentMethodId);
     const canSubmit =
         items.length > 0 && addressReady && identityReady && !!paymentMethodId && !missingPlan && !checkout.isPending;
 
@@ -254,6 +267,13 @@ const CheckoutCliente = () => {
                                     </label>
                                 </section>
 
+                                <CheckoutPaymentSection
+                                    methods={eligiblePayments}
+                                    selectedId={paymentMethodId}
+                                    onSelect={setPaymentMethodId}
+                                    allowedTypes={hasSubscription ? SUBSCRIPTION_PAYMENT_TYPES : undefined}
+                                />
+
                                 <section className="rounded-2xl border border-border bg-card p-5 space-y-3">
                                     <div className="flex items-center gap-2">
                                         <MessageSquare className="h-5 w-5 text-primary"/>
@@ -268,12 +288,6 @@ const CheckoutCliente = () => {
                                         rows={3}
                                     />
                                 </section>
-
-                                <CheckoutPaymentSection
-                                    methods={paymentMethods}
-                                    selectedId={paymentMethodId}
-                                    onSelect={setPaymentMethodId}
-                                />
                             </div>
 
                             <div className="lg:sticky lg:top-24 space-y-3">
@@ -284,6 +298,19 @@ const CheckoutCliente = () => {
                                     ctaDisabled={!canSubmit}
                                     ctaPending={checkout.isPending || updateProfile.isPending}
                                     footnote="Ao confirmar, o pedido é enviado ao produtor com este endereço e pagamento."
+                                    extra={
+                                        <div className="flex items-start justify-between gap-3 text-sm">
+                                            <span className="text-muted-foreground">Pagamento</span>
+                                            <button
+                                                type="button"
+                                                className="text-right text-primary hover:underline"
+                                                onClick={() => document.getElementById("checkout-payment")?.scrollIntoView({behavior: "smooth", block: "start"})}
+                                            >
+                                                {selectedPayment ? paymentMethodLabel(selectedPayment) : "Escolher forma"}
+                                                <span className="block text-xs font-normal">Trocar</span>
+                                            </button>
+                                        </div>
+                                    }
                                 />
                                 <Button variant="outline" className="w-full" asChild>
                                     <Link to="/customer/carrinho">Voltar ao carrinho</Link>

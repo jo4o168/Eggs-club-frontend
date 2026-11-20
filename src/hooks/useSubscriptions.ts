@@ -235,14 +235,11 @@ export const useCreateSubscription = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: { planId: string; producerId?: string; payment_method_id?: number }) => {
-            const body: Record<string, unknown> = {
+        mutationFn: (data: { planId: string; producerId?: string; payment_method_id: number }) => {
+            return api.post<Subscription>('/subscriptions', {
                 subscription_plan_id: Number(data.planId),
-            };
-            if (data.payment_method_id) {
-                body.payment_method_id = data.payment_method_id;
-            }
-            return api.post<Subscription>('/subscriptions', body);
+                payment_method_id: data.payment_method_id,
+            });
         },
         onSuccess: () => {
             queryClient.invalidateQueries({queryKey: ['customer-subscriptions']});
