@@ -219,10 +219,18 @@ export default function PedidoDetalhe() {
                             </p>
                         ) : (
                             <p className="text-sm text-muted-foreground">
-                                NF-e de demonstração pode ser gerada a qualquer momento para a apresentação.
+                                {viewerProducer
+                                    ? "Emita a NF-e de demonstração para o cliente visualizar no pedido."
+                                    : "A nota fiscal aparece aqui quando o produtor emitir."}
                             </p>
                         )}
-                        <DemoNfeDialog orderId={order.id} alreadyIssued={Boolean(order.nfe_access_key)}/>
+                        {viewerProducer || order.nfe_access_key ? (
+                            <DemoNfeDialog
+                                orderId={order.id}
+                                alreadyIssued={Boolean(order.nfe_access_key)}
+                                canIssue={Boolean(order.can_issue_nfe)}
+                            />
+                        ) : null}
                     </CardContent>
                 </Card>
 

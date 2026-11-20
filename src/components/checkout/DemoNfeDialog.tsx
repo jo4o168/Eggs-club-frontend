@@ -10,14 +10,16 @@ import {maskCnpj, maskDocument} from "@/utils/brazilianDocument";
 interface DemoNfeDialogProps {
     orderId: number;
     alreadyIssued?: boolean;
+    canIssue?: boolean;
 }
 
-const DemoNfeDialog = ({orderId, alreadyIssued}: DemoNfeDialogProps) => {
+const DemoNfeDialog = ({orderId, alreadyIssued, canIssue = false}: DemoNfeDialogProps) => {
     const issueNfe = useIssueOrderNfe();
     const [open, setOpen] = useState(false);
     const [nfe, setNfe] = useState<DemoNfe | null>(null);
 
     const handleOpen = async () => {
+        if (!alreadyIssued && !canIssue) return;
         const payload = nfe ?? await issueNfe.mutateAsync(orderId);
         setNfe(payload);
         setOpen(true);
@@ -28,7 +30,7 @@ const DemoNfeDialog = ({orderId, alreadyIssued}: DemoNfeDialogProps) => {
         <>
             <Button type="button" variant="outline" onClick={() => void handleOpen()} disabled={issueNfe.isPending}>
                 {issueNfe.isPending ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileText className="h-4 w-4"/>}
-                {alreadyIssued ? "Ver NF-e demonstrativa" : "Emitir NF-e (demonstração)"}
+                {alreadyIssued ? "Ver NF-e demonstrativa" : canIssue ? "Emitir NF-e (demonstração)" : "Ver NF-e demonstrativa"}
             </Button>
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">

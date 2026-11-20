@@ -86,6 +86,7 @@ export interface OrderDetail extends Order {
     can_report_issue?: boolean;
     can_resolve_issue?: boolean;
     can_replace?: boolean;
+    can_issue_nfe?: boolean;
     suggested_resolution?: "refunded" | "replaced" | null;
     replacement_stock?: ReplacementStockLine[];
     delivery_issue?: DeliveryIssue | null;
